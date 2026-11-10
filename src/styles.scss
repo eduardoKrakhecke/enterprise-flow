@@ -1,3 +1,55 @@
 @use './styles/variables';
 @use './styles/layout';
 @use './styles/components';
+:root {
+  color-scheme: light;
+
+  --app-bg: #f5f7fb;
+  --app-surface: #ffffff;
+  --app-text: #1e293b;
+  --app-muted: #64748b;
+  --app-border: #e2e8f0;
+  --app-hover: #f1f5f9;
+
+  --sidebar-bg: #111827;
+  --sidebar-text: #cbd5e1;
+}
+
+html.app-dark {
+  color-scheme: dark;
+
+  --app-bg: #0f172a;
+  --app-surface: #172033;
+  --app-text: #e2e8f0;
+  --app-muted: #94a3b8;
+  --app-border: #293548;
+  --app-hover: #253249;
+
+  --sidebar-bg: #090f1c;
+  --sidebar-text: #cbd5e1;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: Arial, Helvetica, sans-serif;
+  background: var(--app-bg);
+  color: var(--app-text);
+}
+
+body {
+  font-size: 14px;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+

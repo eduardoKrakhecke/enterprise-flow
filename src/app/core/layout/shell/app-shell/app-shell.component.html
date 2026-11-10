@@ -1,0 +1,189 @@
+
+<div class="app-layout">
+
+  <!-- Sidebar -->
+  <aside
+    class="app-sidebar"
+    [class.sidebar-open]="sidebarOpen()">
+
+    <div class="sidebar-brand">
+
+      <div class="brand-icon">
+        <i class="pi pi-building"></i>
+      </div>
+
+      <div class="brand-info">
+        <strong>EnterpriseFlow</strong>
+        <span>Management Platform</span>
+      </div>
+
+      <button
+        class="sidebar-close"
+        (click)="closeSidebar()"
+        aria-label="Fechar menu">
+
+        <i class="pi pi-times"></i>
+      </button>
+
+    </div>
+
+    <div class="sidebar-section">
+      <span class="section-label">MENU PRINCIPAL</span>
+
+      <nav class="sidebar-nav">
+
+        <a
+          routerLink="/app/dashboard"
+          routerLinkActive="active"
+          (click)="closeSidebar()">
+
+          <i class="pi pi-chart-line"></i>
+          <span>Dashboard</span>
+        </a>
+
+        <a
+          routerLink="/app/customers"
+          (click)="closeSidebar()">
+
+          <i class="pi pi-users"></i>
+          <span>Clientes</span>
+        </a>
+
+        <a
+          routerLink="/app/users"
+          (click)="closeSidebar()">
+
+          <i class="pi pi-user"></i>
+          <span>Usuários</span>
+        </a>
+
+        <a
+          routerLink="/app/departments"
+          (click)="closeSidebar()">
+
+          <i class="pi pi-sitemap"></i>
+          <span>Departamentos</span>
+        </a>
+
+        <a
+          routerLink="/app/projects"
+          (click)="closeSidebar()">
+
+          <i class="pi pi-briefcase"></i>
+          <span>Projetos</span>
+        </a>
+
+        <a
+          routerLink="/app/finance"
+          (click)="closeSidebar()">
+
+          <i class="pi pi-wallet"></i>
+          <span>Financeiro</span>
+        </a>
+
+        <a
+          routerLink="/app/reports"
+          (click)="closeSidebar()">
+
+          <i class="pi pi-file"></i>
+          <span>Relatórios</span>
+        </a>
+
+      </nav>
+    </div>
+
+    <div class="sidebar-bottom">
+
+      <a
+        routerLink="/app/settings"
+        (click)="closeSidebar()">
+
+        <i class="pi pi-cog"></i>
+        <span>Configurações</span>
+      </a>
+
+      <div class="sidebar-version">
+        EnterpriseFlow v1.0.0
+      </div>
+
+    </div>
+
+  </aside>
+
+  <!-- Overlay mobile -->
+  @if (sidebarOpen()) {
+    <div
+      class="sidebar-overlay"
+      (click)="closeSidebar()">
+    </div>
+  }
+
+  <!-- Conteúdo -->
+  <main class="app-main">
+
+    <header class="app-header">
+
+      <div class="header-left">
+
+        <button
+          class="icon-button mobile-menu-button"
+          (click)="toggleSidebar()"
+          aria-label="Abrir menu">
+
+          <i class="pi pi-bars"></i>
+        </button>
+
+        <div class="header-breadcrumb">
+          <span>EnterpriseFlow</span>
+          <i class="pi pi-angle-right"></i>
+          <strong>Workspace</strong>
+        </div>
+
+      </div>
+
+      <div class="header-actions">
+
+        <button
+          class="icon-button"
+          (click)="theme.toggle()"
+          [attr.aria-label]="theme.isDark() ? 'Ativar tema claro' : 'Ativar tema escuro'"
+          [title]="theme.isDark() ? 'Tema claro' : 'Tema escuro'">
+
+          <i
+            [class.pi-moon]="!theme.isDark()"
+            [class.pi-sun]="theme.isDark()"
+            class="pi">
+          </i>
+
+        </button>
+
+        <div class="header-divider"></div>
+
+        <div class="user-profile">
+
+          <div class="user-avatar">
+            AD
+          </div>
+
+          <div class="user-info">
+            <strong>Administrador</strong>
+            <span>Administrador geral</span>
+          </div>
+
+          <i class="pi pi-chevron-down"></i>
+
+        </div>
+
+      </div>
+
+    </header>
+
+    <section class="page-content">
+
+      <router-outlet />
+
+    </section>
+
+  </main>
+
+</div>
