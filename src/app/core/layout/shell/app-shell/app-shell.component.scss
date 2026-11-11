@@ -284,3 +284,12 @@
     padding: 18px;
   }
 }
+
+.logout-button {
+  margin-left: 8px;
+  color: var(--app-muted);
+
+  &:hover {
+    color: #ef4444;
+  }
+}

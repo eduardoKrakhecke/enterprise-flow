@@ -1,0 +1,91 @@
+
+<div class="auth-simple-container">
+
+  <div class="auth-simple-card">
+
+    <a routerLink="/login" class="auth-back">
+      <i class="pi pi-arrow-left"></i>
+      Voltar ao login
+    </a>
+
+    <div class="auth-logo">
+      <i class="pi pi-building"></i>
+      EnterpriseFlow
+    </div>
+
+    <div class="auth-heading">
+      <h1>Criar sua conta</h1>
+      <p>Preencha seus dados para começar.</p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="register()">
+
+      <div class="form-field">
+        <label for="name">Nome completo</label>
+        <input
+          id="name"
+          type="text"
+          formControlName="name"
+          placeholder="Seu nome"
+          autocomplete="name"
+        />
+      </div>
+
+      <div class="form-field">
+        <label for="email">E-mail</label>
+        <input
+          id="email"
+          type="email"
+          formControlName="email"
+          placeholder="seu@email.com"
+          autocomplete="email"
+        />
+      </div>
+
+      <div class="form-field">
+        <label for="password">Senha</label>
+        <input
+          id="password"
+          type="password"
+          formControlName="password"
+          placeholder="Mínimo de 6 caracteres"
+          autocomplete="new-password"
+        />
+      </div>
+
+      <div class="form-field">
+        <label for="confirmPassword">Confirmar senha</label>
+        <input
+          id="confirmPassword"
+          type="password"
+          formControlName="confirmPassword"
+          placeholder="Repita sua senha"
+          autocomplete="new-password"
+        />
+      </div>
+
+      @if (errorMessage()) {
+        <div class="auth-error" role="alert">
+          {{ errorMessage() }}
+        </div>
+      }
+
+      <button
+        type="submit"
+        class="submit-button"
+        [disabled]="loading()">
+
+        {{ loading() ? 'Criando conta...' : 'Criar conta' }}
+
+      </button>
+
+    </form>
+
+    <div class="register-link">
+      Já possui uma conta?
+      <a routerLink="/login">Entrar</a>
+    </div>
+
+  </div>
+
+</div>

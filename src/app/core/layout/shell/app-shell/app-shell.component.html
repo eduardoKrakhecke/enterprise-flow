@@ -1,189 +1,86 @@
 
 <div class="app-layout">
-
-  <!-- Sidebar -->
-  <aside
-    class="app-sidebar"
-    [class.sidebar-open]="sidebarOpen()">
-
+  <aside class="app-sidebar" [class.sidebar-open]="sidebarOpen()">
     <div class="sidebar-brand">
-
-      <div class="brand-icon">
-        <i class="pi pi-building"></i>
-      </div>
-
+      <div class="brand-icon"><i class="pi pi-bolt"></i></div>
       <div class="brand-info">
-        <strong>EnterpriseFlow</strong>
-        <span>Management Platform</span>
+        <strong>Enterprise Flow</strong>
+        <span>GESTÃO EMPRESARIAL</span>
       </div>
-
-      <button
-        class="sidebar-close"
-        (click)="closeSidebar()"
-        aria-label="Fechar menu">
-
+      <button class="sidebar-close" type="button" (click)="closeSidebar()" aria-label="Fechar menu">
         <i class="pi pi-times"></i>
       </button>
-
     </div>
 
     <div class="sidebar-section">
-      <span class="section-label">MENU PRINCIPAL</span>
-
-      <nav class="sidebar-nav">
-
-        <a
-          routerLink="/app/dashboard"
-          routerLinkActive="active"
-          (click)="closeSidebar()">
-
-          <i class="pi pi-chart-line"></i>
+      <span class="section-label">VISÃO GERAL</span>
+      <nav class="sidebar-nav" aria-label="Navegação principal">
+        <a routerLink="/app/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeSidebar()">
+          <i class="pi pi-th-large"></i>
           <span>Dashboard</span>
         </a>
-
-        <a
-          routerLink="/app/customers"
-          (click)="closeSidebar()">
-
-          <i class="pi pi-users"></i>
-          <span>Clientes</span>
-        </a>
-
-        <a
-          routerLink="/app/users"
-          (click)="closeSidebar()">
-
-          <i class="pi pi-user"></i>
-          <span>Usuários</span>
-        </a>
-
-        <a
-          routerLink="/app/departments"
-          (click)="closeSidebar()">
-
-          <i class="pi pi-sitemap"></i>
-          <span>Departamentos</span>
-        </a>
-
-        <a
-          routerLink="/app/projects"
-          (click)="closeSidebar()">
-
+        <a routerLink="/app/projects" routerLinkActive="active" (click)="closeSidebar()">
           <i class="pi pi-briefcase"></i>
           <span>Projetos</span>
         </a>
-
-        <a
-          routerLink="/app/finance"
-          (click)="closeSidebar()">
-
-          <i class="pi pi-wallet"></i>
-          <span>Financeiro</span>
+        <a routerLink="/app/clients" routerLinkActive="active" (click)="closeSidebar()">
+          <i class="pi pi-users"></i>
+          <span>Clientes</span>
         </a>
-
-        <a
-          routerLink="/app/reports"
-          (click)="closeSidebar()">
-
-          <i class="pi pi-file"></i>
+        <a routerLink="/app/reports" routerLinkActive="active" (click)="closeSidebar()">
+          <i class="pi pi-chart-bar"></i>
           <span>Relatórios</span>
         </a>
-
       </nav>
     </div>
 
     <div class="sidebar-bottom">
-
-      <a
-        routerLink="/app/settings"
-        (click)="closeSidebar()">
-
+      <a routerLink="/app/settings" routerLinkActive="active" (click)="closeSidebar()">
         <i class="pi pi-cog"></i>
         <span>Configurações</span>
       </a>
-
-      <div class="sidebar-version">
-        EnterpriseFlow v1.0.0
-      </div>
-
+      <div class="sidebar-version">Enterprise Flow v1.0</div>
     </div>
-
   </aside>
 
-  <!-- Overlay mobile -->
   @if (sidebarOpen()) {
-    <div
-      class="sidebar-overlay"
-      (click)="closeSidebar()">
-    </div>
+    <button class="sidebar-overlay" type="button" (click)="closeSidebar()" aria-label="Fechar menu"></button>
   }
 
-  <!-- Conteúdo -->
   <main class="app-main">
-
     <header class="app-header">
-
       <div class="header-left">
-
-        <button
-          class="icon-button mobile-menu-button"
-          (click)="toggleSidebar()"
-          aria-label="Abrir menu">
-
+        <button class="icon-button mobile-menu-button" type="button" (click)="toggleSidebar()" aria-label="Abrir menu">
           <i class="pi pi-bars"></i>
         </button>
-
         <div class="header-breadcrumb">
-          <span>EnterpriseFlow</span>
-          <i class="pi pi-angle-right"></i>
-          <strong>Workspace</strong>
+          <span>Enterprise Flow</span>
+          <strong>Gestão empresarial</strong>
         </div>
-
       </div>
 
       <div class="header-actions">
-
-        <button
-          class="icon-button"
-          (click)="theme.toggle()"
-          [attr.aria-label]="theme.isDark() ? 'Ativar tema claro' : 'Ativar tema escuro'"
-          [title]="theme.isDark() ? 'Tema claro' : 'Tema escuro'">
-
-          <i
-            [class.pi-moon]="!theme.isDark()"
-            [class.pi-sun]="theme.isDark()"
-            class="pi">
-          </i>
-
+        <button class="icon-button" type="button" (click)="theme.toggle()" [attr.aria-label]="theme.isDark() ? 'Ativar tema claro' : 'Ativar tema escuro'">
+          <i [class]="theme.isDark() ? 'pi pi-sun' : 'pi pi-moon'"></i>
         </button>
-
         <div class="header-divider"></div>
-
         <div class="user-profile">
-
           <div class="user-avatar">
-            AD
+            {{ user()?.name?.charAt(0)?.toUpperCase() ?? 'U' }}
           </div>
-
           <div class="user-info">
-            <strong>Administrador</strong>
-            <span>Administrador geral</span>
+            <strong>{{ user()?.name ?? 'Usuário' }}</strong>
+            <span>{{ user()?.email }}</span>
           </div>
-
-          <i class="pi pi-chevron-down"></i>
-
+          <button class="icon-button logout-button" type="button" (click)="logout()" [disabled]="logoutLoading()" title="Sair da plataforma" aria-label="Sair da plataforma">
+            <i class="pi pi-sign-out"></i>
+          </button>
         </div>
-
       </div>
-
     </header>
 
     <section class="page-content">
-
-      <router-outlet />
-
+      <router-outlet></router-outlet>
     </section>
-
   </main>
-
 </div>

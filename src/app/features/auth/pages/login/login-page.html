@@ -1,0 +1,195 @@
+
+<div class="auth-container">
+
+  <div class="auth-brand-panel">
+
+    <div class="brand-logo">
+      <i class="pi pi-building"></i>
+      <span>EnterpriseFlow</span>
+    </div>
+
+    <div class="brand-content">
+
+      <span class="brand-tag">ENTERPRISE MANAGEMENT</span>
+
+      <h1>
+        Gerencie sua empresa
+        de forma inteligente.
+      </h1>
+
+      <p>
+        Centralize suas operações, acompanhe resultados
+        e tenha controle total do seu negócio.
+      </p>
+
+      <div class="brand-features">
+
+        <div>
+          <i class="pi pi-chart-line"></i>
+          <span>Indicadores em tempo real</span>
+        </div>
+
+        <div>
+          <i class="pi pi-shield"></i>
+          <span>Segurança e controle de acesso</span>
+        </div>
+
+        <div>
+          <i class="pi pi-users"></i>
+          <span>Gestão de equipes</span>
+        </div>
+
+      </div>
+
+    </div>
+
+    <span class="brand-footer">
+      EnterpriseFlow © 2026
+    </span>
+
+  </div>
+
+  <div class="auth-form-panel">
+
+    <div class="auth-theme">
+      <span>Bem-vindo de volta</span>
+    </div>
+
+    <div class="auth-form-wrapper">
+
+      <div class="mobile-brand">
+        <i class="pi pi-building"></i>
+        EnterpriseFlow
+      </div>
+
+      <div class="form-heading">
+
+        <h2>Entrar na plataforma</h2>
+
+        <p>
+          Informe suas credenciais para continuar.
+        </p>
+
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="login()">
+
+        <div class="form-field">
+
+          <label for="email">E-mail</label>
+
+          <input
+            id="email"
+            type="email"
+            formControlName="email"
+            placeholder="seu@email.com"
+            autocomplete="email"
+          />
+
+          @if (
+            form.controls.email.touched &&
+            form.controls.email.invalid
+            ) {
+            <small class="field-error">
+              Informe um e-mail válido.
+            </small>
+          }
+
+        </div>
+
+        <div class="form-field">
+
+          <div class="password-label">
+
+            <label for="password">Senha</label>
+
+            <a routerLink="/forgot-password">
+              Esqueceu a senha?
+            </a>
+
+          </div>
+
+          <div class="password-input">
+
+            <input
+              id="password"
+              [type]="showPassword() ? 'text' : 'password'"
+              formControlName="password"
+              placeholder="Digite sua senha"
+              autocomplete="current-password"
+            />
+
+            <button
+              type="button"
+              (click)="togglePassword()"
+              aria-label="Mostrar ou ocultar senha">
+
+              <i
+                class="pi"
+                [class.pi-eye]="!showPassword()"
+                [class.pi-eye-slash]="showPassword()">
+              </i>
+
+            </button>
+
+          </div>
+
+          @if (
+            form.controls.password.touched &&
+            form.controls.password.invalid
+            ) {
+            <small class="field-error">
+              A senha deve possuir pelo menos 6 caracteres.
+            </small>
+          }
+
+        </div>
+
+        @if (errorMessage()) {
+          <div class="auth-error" role="alert">
+            <i class="pi pi-exclamation-circle"></i>
+            {{ errorMessage() }}
+          </div>
+        }
+
+        <button
+          class="submit-button"
+          type="submit"
+          [disabled]="loading()">
+
+          @if (loading()) {
+            <i class="pi pi-spin pi-spinner"></i>
+            Entrando...
+          } @else {
+            Entrar na plataforma
+          }
+
+        </button>
+
+      </form>
+
+      <div class="auth-divider">
+        <span>OU CONTINUE COM</span>
+      </div>
+
+      <button
+        class="google-button"
+        type="button"
+        (click)="loginGoogle()"
+        [disabled]="loading()">
+
+        <i class="pi pi-google"></i>
+        Continuar com Google
+
+      </button>
+
+      <div class="register-link">
+        Não possui uma conta?
+        <a routerLink="/register">Criar conta</a>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
