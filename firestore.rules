@@ -28,6 +28,74 @@ service cloud.firestore {
           in ['owner', 'admin'];
     }
 
+    function projectMemberPath(tenantId) {
+      return /databases/$(database)/documents/tenantMembers/$(tenantId + '_' + request.auth.uid);
+    }
+
+    function canProjectAction(tenantId, action) {
+      return request.auth != null
+        && exists(projectMemberPath(tenantId))
+        && get(projectMemberPath(tenantId)).data.active == true
+        && (
+          get(projectMemberPath(tenantId)).data.role == 'owner'
+          ||
+          (
+            get(projectMemberPath(tenantId)).data.permissions is map
+            && get(projectMemberPath(tenantId))
+              .data.permissions.get(action, false) == true
+          )
+        );
+    }
+
+    function validProject(data) {
+      return data.keys().hasAll([
+          'tenantId', 'name', 'description', 'clientName',
+          'responsibleUserId', 'status', 'priority',
+          'startDate', 'dueDate', 'createdBy',
+          'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'tenantId', 'name', 'description', 'clientName',
+          'responsibleUserId', 'status', 'priority',
+          'startDate', 'dueDate', 'createdBy',
+          'createdAt', 'updatedAt'
+        ])
+        && data.tenantId is string
+        && data.name is string
+        && data.name.size() > 0
+        && data.name.size() <= 150
+        && data.description is string
+        && data.description.size() <= 3000
+        && data.clientName is string
+        && data.clientName.size() <= 150
+        && (
+          data.responsibleUserId == null
+          || data.responsibleUserId is string
+        )
+        && data.status in [
+          'planned', 'in_progress', 'completed', 'cancelled'
+        ]
+        && data.priority in [
+          'low', 'medium', 'high', 'critical'
+        ]
+        && (
+          data.startDate == null
+          || data.startDate is timestamp
+        )
+        && (
+          data.dueDate == null
+          || data.dueDate is timestamp
+        )
+        && (
+          data.startDate == null
+          || data.dueDate == null
+          || data.dueDate >= data.startDate
+        )
+        && data.createdBy is string
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
     function validPermissions(permissions) {
       return permissions.keys().hasOnly([
           'view', 'create', 'update', 'delete'
@@ -460,6 +528,47 @@ match /invitations/{invitationId} {
 
 
     // Bloqueio padrão.
+    match /projects/{projectId} {
+
+      allow read: if canProjectAction(
+        resource.data.tenantId,
+        'view'
+      );
+
+      allow create: if validProject(request.resource.data)
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt <= request.time
+        && request.resource.data.createdAt
+          >= request.time - duration.value(5, 'm')
+        && request.resource.data.updatedAt
+          == request.resource.data.createdAt
+        && canProjectAction(
+          request.resource.data.tenantId,
+          'create'
+        );
+
+      allow update: if canProjectAction(
+          resource.data.tenantId,
+          'update'
+        )
+        && validProject(request.resource.data)
+        && request.resource.data.tenantId
+          == resource.data.tenantId
+        && request.resource.data.createdBy
+          == resource.data.createdBy
+        && request.resource.data.createdAt
+          == resource.data.createdAt
+        && request.resource.data.updatedAt
+          >= resource.data.updatedAt
+        && request.resource.data.updatedAt
+          <= request.time;
+
+      allow delete: if canProjectAction(
+        resource.data.tenantId,
+        'delete'
+      );
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

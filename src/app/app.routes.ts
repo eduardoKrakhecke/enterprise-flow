@@ -70,6 +70,13 @@ export const routes: Routes = [
       },
 
       {
+        path: 'projects',
+        loadChildren: () =>
+          import('./features/projects/projects.routes')
+            .then(m => m.PROJECTS_ROUTES)
+      },
+
+      {
         path: 'members',
         loadChildren: () =>
           import('./features/members/members.routes')

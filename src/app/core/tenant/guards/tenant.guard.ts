@@ -6,9 +6,7 @@ import {
   Router
 } from '@angular/router';
 
-import {
-  TenantService
-} from '../services/tenant.service';
+import { TenantService } from '../services/tenant.service';
 
 import {
   TenantContextService
@@ -25,7 +23,15 @@ export const tenantGuard: CanActivateFn = async () => {
     const organizations =
       await tenantService.getMyTenants();
 
-    if (organizations.length === 0) {
+    const activeOrganizations = organizations.filter(
+      item => item.member.active === true &&
+        item.tenant.status === 'active'
+    );
+
+    if (activeOrganizations.length === 0) {
+
+      tenantContext.clear();
+
       return router.createUrlTree([
         '/onboarding/create-organization'
       ]);
@@ -34,7 +40,7 @@ export const tenantGuard: CanActivateFn = async () => {
     const savedTenantId =
       tenantContext.getSavedTenantId();
 
-    const selectedOrganization = organizations.find(
+    const selectedOrganization = activeOrganizations.find(
       item => item.tenant.id === savedTenantId
     );
 
@@ -48,11 +54,11 @@ export const tenantGuard: CanActivateFn = async () => {
       return true;
     }
 
-    if (organizations.length === 1) {
+    if (activeOrganizations.length === 1) {
 
       tenantContext.setActiveTenant(
-        organizations[0].tenant,
-        organizations[0].member
+        activeOrganizations[0].tenant,
+        activeOrganizations[0].member
       );
 
       return true;
@@ -67,11 +73,17 @@ export const tenantGuard: CanActivateFn = async () => {
   } catch (error) {
 
     console.error(
-      'Erro ao validar organização:',
+      '[TENANT GUARD] Erro ao validar organização:',
       error
     );
 
-    return router.createUrlTree(['/login']);
+    tenantContext.clear();
 
+    // Não confundir falha de consulta com ausência de login.
+    // Mantemos a rota protegida e direcionamos para uma
+    // página de erro dedicada.
+    return router.createUrlTree([
+      '/organization-error'
+    ]);
   }
 };

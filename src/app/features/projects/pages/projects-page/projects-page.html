@@ -1,0 +1,415 @@
+
+<section class="projects-page">
+
+  <header class="page-header">
+    <div>
+      <h1>Projetos</h1>
+      <p>Gerencie os projetos da sua organização.</p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        type="button"
+        class="secondary-button"
+        (click)="loadProjects()"
+        [disabled]="loading()"
+      >
+        <i class="pi pi-refresh"></i>
+        Atualizar
+      </button>
+
+      @if (canCreate()) {
+        <button
+          type="button"
+          class="primary-button"
+          (click)="openCreateForm()"
+        >
+          <i class="pi pi-plus"></i>
+          Novo projeto
+        </button>
+      }
+    </div>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="message error-message" role="alert">
+      {{ errorMessage() }}
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="message success-message" role="status">
+      {{ successMessage() }}
+    </div>
+  }
+
+  @if (!canView()) {
+    <div class="empty-state">
+      <i class="pi pi-lock"></i>
+      <p>Você não possui permissão para visualizar projetos.</p>
+    </div>
+  } @else {
+
+    <div class="stats-grid">
+      <article class="stat-card">
+        <span>Total de projetos</span>
+        <strong>{{ totalProjects() }}</strong>
+      </article>
+
+      <article class="stat-card">
+        <span>Em andamento</span>
+        <strong>{{ inProgressCount() }}</strong>
+      </article>
+
+      <article class="stat-card">
+        <span>Concluídos</span>
+        <strong>{{ completedCount() }}</strong>
+      </article>
+
+      <article class="stat-card">
+        <span>Atrasados</span>
+        <strong>{{ overdueCount() }}</strong>
+      </article>
+    </div>
+
+    @if (showForm()) {
+      <section class="form-panel">
+
+        <div class="panel-header">
+          <div>
+            <h2>
+              {{ editingProjectId() ? 'Editar projeto' : 'Novo projeto' }}
+            </h2>
+            <p>Preencha os dados do projeto.</p>
+          </div>
+
+          <button
+            type="button"
+            class="icon-button"
+            (click)="closeForm()"
+            aria-label="Fechar formulário"
+          >
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+
+        <form
+          [formGroup]="projectForm"
+          (ngSubmit)="saveProject()"
+        >
+          <div class="form-grid">
+
+            <div class="form-field">
+              <label for="projectName">Nome do projeto *</label>
+              <input
+                id="projectName"
+                type="text"
+                formControlName="name"
+                maxlength="150"
+                placeholder="Ex.: Implantação de ERP"
+              />
+
+              @if (
+                projectForm.controls.name.invalid &&
+                projectForm.controls.name.touched
+                ) {
+                <small class="field-error">
+                  Informe o nome do projeto.
+                </small>
+              }
+            </div>
+
+            <div class="form-field">
+              <label for="clientName">Cliente</label>
+              <input
+                id="clientName"
+                type="text"
+                formControlName="clientName"
+                maxlength="150"
+                placeholder="Nome do cliente"
+              />
+            </div>
+
+            <div class="form-field full-width">
+              <label for="description">Descrição</label>
+              <textarea
+                id="description"
+                formControlName="description"
+                rows="3"
+                maxlength="3000"
+                placeholder="Descreva o objetivo do projeto"
+              ></textarea>
+            </div>
+
+            <div class="form-field">
+              <label for="priority">Prioridade</label>
+              <select id="priority" formControlName="priority">
+                <option value="low">Baixa</option>
+                <option value="medium">Média</option>
+                <option value="high">Alta</option>
+                <option value="critical">Crítica</option>
+              </select>
+            </div>
+
+            <div class="form-field">
+              <label for="status">Status</label>
+              <select
+                id="status"
+                formControlName="status"
+                [attr.disabled]="editingProjectId() ? null : true"
+              >
+                <option value="planned">Planejado</option>
+                <option value="in_progress">Em andamento</option>
+                <option value="completed">Concluído</option>
+                <option value="cancelled">Cancelado</option>
+              </select>
+            </div>
+
+            <div class="form-field">
+              <label for="startDate">Data de início</label>
+              <input
+                id="startDate"
+                type="date"
+                formControlName="startDate"
+              />
+            </div>
+
+            <div class="form-field">
+              <label for="dueDate">Prazo de conclusão</label>
+              <input
+                id="dueDate"
+                type="date"
+                formControlName="dueDate"
+              />
+            </div>
+
+            <div class="form-field full-width">
+              <label for="responsibleUserId">
+                Identificador do responsável
+              </label>
+              <input
+                id="responsibleUserId"
+                type="text"
+                formControlName="responsibleUserId"
+                placeholder="UID do usuário (opcional)"
+              />
+            </div>
+
+          </div>
+
+          <div class="form-actions">
+            <button
+              type="button"
+              class="secondary-button"
+              (click)="closeForm()"
+              [disabled]="saving()"
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="submit"
+              class="primary-button"
+              [disabled]="saving()"
+            >
+              @if (saving()) {
+                <i class="pi pi-spin pi-spinner"></i>
+                Salvando...
+              } @else {
+                <i class="pi pi-check"></i>
+                Salvar projeto
+              }
+            </button>
+          </div>
+        </form>
+      </section>
+    }
+
+    <section class="projects-panel">
+
+      <div class="panel-header">
+        <div>
+          <h2>Projetos cadastrados</h2>
+          <p>Consulte e gerencie os projetos existentes.</p>
+        </div>
+      </div>
+
+      <div class="filters">
+        <div class="search-field">
+          <i class="pi pi-search"></i>
+          <input
+            type="search"
+            placeholder="Buscar projeto ou cliente"
+            [value]="searchTerm()"
+            (input)="updateSearch($any($event.target).value)"
+          />
+        </div>
+
+        <select
+          aria-label="Filtrar por status"
+          [value]="statusFilter()"
+          (change)="updateStatusFilter($any($event.target).value)"
+        >
+          <option value="all">Todos os status</option>
+          <option value="planned">Planejado</option>
+          <option value="in_progress">Em andamento</option>
+          <option value="completed">Concluído</option>
+          <option value="cancelled">Cancelado</option>
+        </select>
+
+        <select
+          aria-label="Filtrar por prioridade"
+          [value]="priorityFilter()"
+          (change)="updatePriorityFilter($any($event.target).value)"
+        >
+          <option value="all">Todas as prioridades</option>
+          <option value="low">Baixa</option>
+          <option value="medium">Média</option>
+          <option value="high">Alta</option>
+          <option value="critical">Crítica</option>
+        </select>
+      </div>
+
+      @if (loading()) {
+        <div class="empty-state">
+          <i class="pi pi-spin pi-spinner"></i>
+          <p>Carregando projetos...</p>
+        </div>
+      } @else if (filteredProjects().length === 0) {
+        <div class="empty-state">
+          <i class="pi pi-folder-open"></i>
+          <p>Nenhum projeto encontrado.</p>
+        </div>
+      } @else {
+        <div class="table-container">
+          <table>
+            <thead>
+            <tr>
+              <th>Projeto</th>
+              <th>Cliente</th>
+              <th>Status</th>
+              <th>Prioridade</th>
+              <th>Prazo</th>
+              <th>Ações</th>
+            </tr>
+            </thead>
+
+            <tbody>
+              @for (project of filteredProjects(); track project.id) {
+                <tr>
+                  <td>
+                    <div class="project-name">
+                      <strong>{{ project.name }}</strong>
+                      <small>{{ project.description }}</small>
+                    </div>
+                  </td>
+
+                  <td>{{ project.clientName || '—' }}</td>
+
+                  <td>
+                    <span
+                      class="status-badge"
+                      [class.planned]="project.status === 'planned'"
+                      [class.in-progress]="project.status === 'in_progress'"
+                      [class.completed]="project.status === 'completed'"
+                      [class.cancelled]="project.status === 'cancelled'"
+                    >
+                      {{ statusLabel(project.status) }}
+                    </span>
+                  </td>
+
+                  <td>
+                    <span
+                      class="priority-badge"
+                      [class.low]="project.priority === 'low'"
+                      [class.medium]="project.priority === 'medium'"
+                      [class.high]="project.priority === 'high'"
+                      [class.critical]="project.priority === 'critical'"
+                    >
+                      {{ priorityLabel(project.priority) }}
+                    </span>
+                  </td>
+
+                  <td>
+                    {{
+                      project.dueDate
+                        ? (project.dueDate.toDate() | date:'dd/MM/yyyy')
+                        : '—'
+                    }}
+                  </td>
+
+                  <td>
+                    <div class="table-actions">
+                      @if (canUpdate()) {
+                        <button
+                          type="button"
+                          class="icon-button"
+                          title="Editar projeto"
+                          aria-label="Editar projeto"
+                          (click)="openEditForm(project)"
+                        >
+                          <i class="pi pi-pencil"></i>
+                        </button>
+                      }
+
+                      @if (canDelete()) {
+                        <button
+                          type="button"
+                          class="icon-button danger"
+                          title="Excluir projeto"
+                          aria-label="Excluir projeto"
+                          (click)="requestDelete(project)"
+                        >
+                          <i class="pi pi-trash"></i>
+                        </button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+
+    @if (deletingProjectId()) {
+      <div class="modal-backdrop">
+        <section
+          class="confirm-dialog"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="delete-title"
+          aria-describedby="delete-description"
+        >
+          <h2 id="delete-title">Excluir projeto?</h2>
+
+          <p id="delete-description">
+            Esta ação é permanente e não poderá ser desfeita.
+          </p>
+
+          <div class="form-actions">
+            <button
+              type="button"
+              class="secondary-button"
+              (click)="cancelDelete()"
+              [disabled]="saving()"
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="button"
+              class="danger-button"
+              (click)="confirmDelete()"
+              [disabled]="saving()"
+            >
+              Excluir
+            </button>
+          </div>
+        </section>
+      </div>
+    }
+  }
+
+</section>

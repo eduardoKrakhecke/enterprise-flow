@@ -7,11 +7,10 @@ import {
   PLATFORM_ID
 } from '@angular/core';
 
-import {
-  isPlatformBrowser
-} from '@angular/common';
+import { isPlatformBrowser } from '@angular/common';
 
 import { Tenant } from '../models/tenant.model';
+
 import {
   TenantMember,
   TenantPermissions
@@ -45,22 +44,67 @@ export class TenantContextService {
     () => this.activeTenant()?.id ?? null
   );
 
-  readonly activePermissions = computed<TenantPermissions>(() => {
+  readonly activeRole = computed(
+    () => this.activeMember()?.role ?? null
+  );
+
+  readonly isActiveMember = computed(() => {
+    const tenant = this.activeTenant();
     const member = this.activeMember();
 
-    if (!member) {
+    return !!tenant &&
+      !!member &&
+      member.active === true &&
+      member.tenantId === tenant.id;
+  });
+
+  readonly canManageMembers = computed(() => {
+    if (!this.isActiveMember()) {
+      return false;
+    }
+
+    const role = this.activeRole();
+
+    return role === 'owner' || role === 'admin';
+  });
+
+  readonly activePermissions = computed<TenantPermissions>(() => {
+
+    const member = this.activeMember();
+
+    if (!this.isActiveMember() || !member) {
       return NO_PERMISSIONS;
     }
 
-    if (!member.permissions &&
-      (member.role === 'owner' || member.role === 'admin')) {
+    // O proprietário possui todas as permissões.
+    if (member.role === 'owner') {
       return FULL_PERMISSIONS;
     }
 
+    // Para os demais papéis, respeita as permissões.
     return member.permissions ?? NO_PERMISSIONS;
   });
 
-  setActiveTenant(tenant: Tenant, member?: TenantMember): void {
+  readonly canView = computed(
+    () => this.activePermissions().view
+  );
+
+  readonly canCreate = computed(
+    () => this.activePermissions().create
+  );
+
+  readonly canUpdate = computed(
+    () => this.activePermissions().update
+  );
+
+  readonly canDelete = computed(
+    () => this.activePermissions().delete
+  );
+
+  setActiveTenant(
+    tenant: Tenant,
+    member?: TenantMember
+  ): void {
 
     this.activeTenant.set(tenant);
     this.activeMember.set(member ?? null);
@@ -96,8 +140,9 @@ export class TenantContextService {
     }
   }
 
-  hasPermission(permission: keyof TenantPermissions): boolean {
+  hasPermission(
+    permission: keyof TenantPermissions
+  ): boolean {
     return this.activePermissions()[permission];
   }
 }
-
