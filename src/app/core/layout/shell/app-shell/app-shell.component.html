@@ -64,6 +64,13 @@
           <i [class]="theme.isDark() ? 'pi pi-sun' : 'pi pi-moon'"></i>
         </button>
         <div class="header-divider"></div>
+        <div class="active-organization">
+          <i class="pi pi-building"></i>
+
+            <span>
+               {{ activeTenant()?.name }}
+            </span>
+        </div>
         <div class="user-profile">
           <div class="user-avatar">
             {{ user()?.name?.charAt(0)?.toUpperCase() ?? 'U' }}

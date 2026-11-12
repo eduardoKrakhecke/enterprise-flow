@@ -19,6 +19,13 @@ import {
 
 import { AuthService } from '../../../../core/auth/services/auth.service';
 import { AuthErrorService } from '../../../../core/auth/services/auth-error.service';
+import {
+  TenantService
+} from '../../../../core/tenant/services/tenant.service';
+
+import {
+  TenantContextService
+} from '../../../../core/tenant/services/tenant-context.service';
 
 @Component({
   selector: 'app-login-page',
@@ -37,6 +44,9 @@ export class LoginPage {
   private readonly errorService = inject(AuthErrorService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly tenantService = inject(TenantService);
+
+  private readonly tenantContext = inject(TenantContextService);
 
   readonly loading = signal(false);
   readonly errorMessage = signal('');
@@ -119,14 +129,39 @@ export class LoginPage {
 
   private async navigateAfterLogin(): Promise<void> {
 
+    const organizations =
+      await this.tenantService.getMyTenants();
+
+    if (organizations.length === 0) {
+
+      await this.router.navigateByUrl(
+        '/onboarding/create-organization'
+      );
+
+      return;
+    }
+
     const returnUrl =
       this.route.snapshot.queryParamMap.get('returnUrl');
 
-    const destination =
-      returnUrl?.startsWith('/app')
-        ? returnUrl
-        : '/app/dashboard';
+    if (organizations.length === 1) {
 
-    await this.router.navigateByUrl(destination);
+      this.tenantContext.setActiveTenant(
+        organizations[0].tenant
+      );
+
+      const destination =
+        returnUrl?.startsWith('/app')
+          ? returnUrl
+          : '/app/dashboard';
+
+      await this.router.navigateByUrl(destination);
+
+      return;
+    }
+
+    await this.router.navigateByUrl(
+      '/organizations/select'
+    );
   }
 }

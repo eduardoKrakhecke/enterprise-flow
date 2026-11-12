@@ -1,0 +1,75 @@
+
+<div class="selection-container">
+
+  <div class="selection-content">
+
+    <div class="selection-brand">
+      <i class="pi pi-building"></i>
+      EnterpriseFlow
+    </div>
+
+    <div class="selection-heading">
+      <h1>Selecione sua organização</h1>
+      <p>
+        Escolha a empresa que deseja administrar.
+      </p>
+    </div>
+
+    @if (loading()) {
+
+      <div class="loading-state">
+        <i class="pi pi-spin pi-spinner"></i>
+        Carregando organizações...
+      </div>
+
+    } @else {
+
+      @if (errorMessage()) {
+        <div class="selection-error" role="alert">
+          {{ errorMessage() }}
+        </div>
+      }
+
+      <div class="organization-list">
+
+        @for (
+            item of organizations();
+          track item.tenant.id
+          ) {
+
+          <button
+            class="organization-card"
+            type="button"
+            (click)="selectOrganization(item)">
+
+            <div class="organization-icon">
+              <i class="pi pi-building"></i>
+            </div>
+
+            <div class="organization-info">
+
+              <strong>{{ item.tenant.name }}</strong>
+
+              <span>
+                CNPJ: {{ item.tenant.document }}
+              </span>
+
+              <small>
+                Perfil: {{ item.member.role }}
+              </small>
+
+            </div>
+
+            <i class="pi pi-arrow-right"></i>
+
+          </button>
+
+        }
+
+      </div>
+
+    }
+
+  </div>
+
+</div>

@@ -12,6 +12,10 @@ import {
   RouterLinkActive
 } from '@angular/router';
 
+import {
+  TenantContextService
+} from '../../../tenant/services/tenant-context.service';
+
 import { ThemeService } from '../../../theme/theme.service';
 import { AuthService } from '../../../auth/services/auth.service';
 
@@ -37,6 +41,9 @@ export class AppShellComponent {
   readonly logoutLoading = signal(false);
 
   readonly user = this.authService.currentUser;
+  readonly tenantContext = inject(TenantContextService);
+
+  readonly activeTenant = this.tenantContext.activeTenant;
 
   toggleSidebar(): void {
     this.sidebarOpen.update(value => !value);

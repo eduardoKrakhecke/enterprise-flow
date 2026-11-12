@@ -293,3 +293,25 @@
     color: #ef4444;
   }
 }
+
+.active-organization {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 12px;
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  color: var(--app-text);
+  background: var(--app-bg);
+  font-size: 12px;
+
+  i {
+    color: #3b82f6;
+  }
+}
+
+@media (max-width: 576px) {
+  .active-organization {
+    display: none;
+  }
+}

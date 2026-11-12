@@ -1,0 +1,108 @@
+
+<div class="onboarding-container">
+
+  <div class="onboarding-card">
+
+    <div class="onboarding-logo">
+      <i class="pi pi-building"></i>
+      EnterpriseFlow
+    </div>
+
+    <div class="onboarding-heading">
+
+      <span class="step-label">CONFIGURAÇÃO INICIAL</span>
+
+      <h1>Crie sua organização</h1>
+
+      <p>
+        Cadastre sua empresa para começar a utilizar
+        a plataforma EnterpriseFlow.
+      </p>
+
+    </div>
+
+    <form
+      [formGroup]="form"
+      (ngSubmit)="create()">
+
+      <div class="form-field">
+
+        <label for="name">Nome da empresa</label>
+
+        <input
+          id="name"
+          type="text"
+          formControlName="name"
+          placeholder="Ex.: Empresa Alpha"
+        />
+
+        @if (
+          form.controls.name.touched &&
+          form.controls.name.invalid
+          ) {
+          <small class="field-error">
+            Informe um nome com pelo menos 3 caracteres.
+          </small>
+        }
+
+      </div>
+
+      <div class="form-field">
+
+        <label for="document">CNPJ</label>
+
+        <input
+          id="document"
+          type="text"
+          inputmode="numeric"
+          maxlength="14"
+          formControlName="document"
+          placeholder="Somente números"
+        />
+
+        <small class="field-hint">
+          Digite os 14 números do CNPJ, sem pontuação.
+        </small>
+
+        @if (
+          form.controls.document.touched &&
+          form.controls.document.invalid
+          ) {
+          <small class="field-error">
+            Informe um CNPJ com 14 números.
+          </small>
+        }
+
+      </div>
+
+      @if (errorMessage()) {
+        <div class="error-message" role="alert">
+          <i class="pi pi-exclamation-circle"></i>
+          {{ errorMessage() }}
+        </div>
+      }
+
+      <button
+        type="submit"
+        [disabled]="loading()"
+        class="create-button">
+
+        @if (loading()) {
+          <i class="pi pi-spin pi-spinner"></i>
+          Criando organização...
+        } @else {
+          Criar organização
+          <i class="pi pi-arrow-right"></i>
+        }
+
+      </button>
+
+    </form>
+
+    <div class="onboarding-footer">
+      Você será registrado como proprietário da organização.
+    </div>
+
+  </div>
+
+</div>

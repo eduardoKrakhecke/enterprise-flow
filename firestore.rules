@@ -1,18 +1,144 @@
-rules_version='2'
+
+rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function memberPath(tenantId, userId) {
+      return /databases/$(database)/documents/tenantMembers/$(tenantId + '_' + userId);
+    }
+
+    function tenantPath(tenantId) {
+      return /databases/$(database)/documents/tenants/$(tenantId);
+    }
+
+    function isActiveMember(tenantId) {
+      return isAuthenticated()
+        && exists(memberPath(tenantId, request.auth.uid))
+        && get(memberPath(tenantId, request.auth.uid)).data.active == true;
+    }
+
+    function isTenantAdmin(tenantId) {
+      return isActiveMember(tenantId)
+        && get(memberPath(tenantId, request.auth.uid)).data.role
+          in ['owner', 'admin'];
+    }
+
+    // Valida a associação criada na mesma transação.
+    function validOwnerMembership(tenantId) {
+      return existsAfter(memberPath(tenantId, request.auth.uid))
+        && getAfter(memberPath(tenantId, request.auth.uid)).data.userId
+          == request.auth.uid
+        && getAfter(memberPath(tenantId, request.auth.uid)).data.tenantId
+          == tenantId
+        && getAfter(memberPath(tenantId, request.auth.uid)).data.role
+          == 'owner'
+        && getAfter(memberPath(tenantId, request.auth.uid)).data.active
+          == true;
+    }
+
+    // Valida a organização criada na mesma transação.
+    function validNewTenant(tenantId) {
+      return existsAfter(tenantPath(tenantId))
+        && getAfter(tenantPath(tenantId)).data.ownerId
+          == request.auth.uid
+        && getAfter(tenantPath(tenantId)).data.status
+          == 'active';
+    }
+
+    // Perfis individuais.
+    match /users/{userId} {
+      allow read: if isAuthenticated()
+        && request.auth.uid == userId;
+
+      allow create, update, delete: if false;
+    }
+
+    // Organizações.
+    match /tenants/{tenantId} {
+
+      allow read: if isActiveMember(tenantId);
+
+      allow create: if isAuthenticated()
+        && request.resource.data.keys().hasOnly([
+          'name',
+          'document',
+          'slug',
+          'ownerId',
+          'status',
+          'createdAt'
+        ])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 3
+        && request.resource.data.name.size() <= 100
+        && request.resource.data.document is string
+        && request.resource.data.document.matches('^[0-9]{14}$')
+        && request.resource.data.slug is string
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.status == 'active'
+        && validOwnerMembership(tenantId);
+
+      // Alterações administrativas serão implementadas depois.
+      allow update, delete: if false;
+    }
+
+    // Associação de usuários.
+    match /tenantMembers/{memberId} {
+
+      allow read: if isAuthenticated()
+        && (
+          resource.data.userId == request.auth.uid
+          || isTenantAdmin(resource.data.tenantId)
+        );
+
+      allow create: if isAuthenticated()
+        && memberId == (
+          request.resource.data.tenantId + '_' + request.auth.uid
+        )
+        && request.resource.data.keys().hasOnly([
+          'tenantId',
+          'userId',
+          'role',
+          'active',
+          'createdAt'
+        ])
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.role == 'owner'
+        && request.resource.data.active == true
+        && validNewTenant(request.resource.data.tenantId);
+
+      allow update, delete: if false;
+    }
+
+    // Registro interno de CNPJs.
+    match /tenantDocuments/{documentId} {
+
+      allow create: if isAuthenticated()
+        && documentId.matches('^[0-9]{14}$')
+        && request.resource.data.keys().hasOnly([
+          'tenantId',
+          'ownerId',
+          'createdAt'
+        ])
+        && request.resource.data.ownerId == request.auth.uid
+        && validNewTenant(request.resource.data.tenantId)
+        && validOwnerMembership(request.resource.data.tenantId);
+
+      allow read, update, delete: if false;
+    }
+
+    // Convites: serão implementados em outra etapa.
+    match /invitations/{invitationId} {
+      allow read, write: if false;
+    }
+
+    // Bloqueio padrão.
     match /{document=**} {
-      // This rule allows anyone with your database reference to view, edit,
-      // and delete all data in your database. It is useful for getting
-      // started, but it is configured to expire after 30 days because it
-      // leaves your app open to attackers. At that time, all client
-      // requests to your database will be denied.
-      //
-      // Make sure to write security rules for your app before that time, or
-      // else all client requests to your database will be denied until you
-      // update your rules.
-      allow read, write: if request.time < timestamp.date(2026, 12, 10);
+      allow read, write: if false;
     }
   }
 }

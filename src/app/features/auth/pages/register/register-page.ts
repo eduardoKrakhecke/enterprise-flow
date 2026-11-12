@@ -83,7 +83,9 @@ export class RegisterPage {
         password
       );
 
-      await this.router.navigateByUrl('/app/dashboard');
+      await this.router.navigateByUrl(
+        '/onboarding/create-organization'
+      );
 
     } catch (error) {
 

@@ -120,4 +120,8 @@ export class AuthService {
       emailVerified: user.emailVerified
     };
   }
+
+  getCurrentFirebaseUser(): User | null {
+    return this.auth.currentUser;
+  }
 }

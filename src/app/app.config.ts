@@ -37,7 +37,8 @@ import {
 
 import {
   provideFunctions,
-  getFunctions
+  getFunctions,
+  connectFunctionsEmulator
 } from '@angular/fire/functions';
 
 import {
@@ -53,6 +54,8 @@ import {
 import {
   environment
 } from '../environments/environment';
+
+import { isDevMode } from '@angular/core';
 
 export const appConfig: ApplicationConfig = {
 
@@ -74,9 +77,18 @@ export const appConfig: ApplicationConfig = {
 
     provideStorage(() => getStorage()),
 
-    provideFunctions(() =>
-      getFunctions()
-    ),
+    provideFunctions(() => {
+      const functions = getFunctions(
+        undefined,
+        'southamerica-east1'
+      );
+
+      if (isDevMode()) {
+        connectFunctionsEmulator(functions, 'localhost', 5001);
+      }
+
+      return functions;
+    }),
 
     providePrimeNG({
       theme: {

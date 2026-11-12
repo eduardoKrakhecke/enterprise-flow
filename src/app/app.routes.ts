@@ -1,9 +1,17 @@
 
 import { Routes } from '@angular/router';
 
-import { AppShellComponent } from './core/layout/shell/app-shell/app-shell.component';
+import {
+  AppShellComponent
+} from './core/layout/shell/app-shell/app-shell.component';
 
-import { authGuard } from './core/auth/guards/auth.guard';
+import {
+  authGuard
+} from './core/auth/guards/auth.guard';
+
+import {
+  tenantGuard
+} from './core/tenant/guards/tenant.guard';
 
 export const routes: Routes = [
 
@@ -15,25 +23,44 @@ export const routes: Routes = [
 
   {
     path: '',
+    loadChildren: () =>
+      import('./features/auth/auth.routes')
+        .then(m => m.AUTH_ROUTES)
+  },
+
+  {
+    path: 'onboarding',
+    canActivate: [authGuard],
     children: [
       {
-        path: '',
-        loadChildren: () =>
-          import('./features/auth/auth.routes')
-            .then(m => m.AUTH_ROUTES)
+        path: 'create-organization',
+        loadComponent: () =>
+          import(
+            './features/onboarding/pages/create-organization/create-organization-page/create-organization-page.component'
+            ).then(m => m.CreateOrganizationPage)
+      }
+    ]
+  },
+
+  {
+    path: 'organizations',
+    canActivate: [authGuard],
+    children: [
+      {
+        path: 'select',
+        loadComponent: () =>
+          import(
+            './features/onboarding/pages/organization-selection/organization-selection-page/organization-selection-page.component'
+            ).then(m => m.OrganizationSelectionPage)
       }
     ]
   },
 
   {
     path: 'app',
-
     component: AppShellComponent,
-
-    canActivate: [authGuard],
-
+    canActivate: [authGuard, tenantGuard],
     children: [
-
       {
         path: 'dashboard',
         loadComponent: () =>
@@ -49,7 +76,6 @@ export const routes: Routes = [
       }
 
     ]
-
   },
 
   {
