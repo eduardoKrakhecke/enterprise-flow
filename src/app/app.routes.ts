@@ -70,6 +70,14 @@ export const routes: Routes = [
       },
 
       {
+        path: 'members',
+        loadChildren: () =>
+          import('./features/members/members.routes')
+            .then(m => m.MEMBERS_ROUTES)
+      },
+
+
+      {
         path: '',
         redirectTo: 'dashboard',
         pathMatch: 'full'
@@ -80,7 +88,7 @@ export const routes: Routes = [
 
   {
     path: '**',
-    redirectTo: 'login'
+    redirectTo: 'app/dashboard'
   }
 
 ];

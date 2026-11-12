@@ -1,1 +1,346 @@
+<section class="members-page">
+  <header class="page-header">
+    <div>
+      <h1>Membros da organização</h1>
+      <p>Cadastre usuários e defina suas permissões de acesso.</p>
+    </div>
 
+    <div class="members-header-actions">
+      <button
+        type="button"
+        class="refresh-button"
+        (click)="loadMembers()"
+        [disabled]="loading()"
+      >
+        <i class="pi pi-refresh"></i>
+        Atualizar
+      </button>
+
+      @if (canManage()) {
+        <button
+          type="button"
+          class="invite-button"
+          (click)="openMemberForm()"
+          [disabled]="loading()"
+        >
+          <i class="pi pi-user-plus"></i>
+          Adicionar usuário
+        </button>
+      }
+    </div>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="alert alert-danger" role="alert">
+      <i class="pi pi-exclamation-triangle"></i>
+      {{ errorMessage() }}
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="alert alert-success" role="status">
+      <i class="pi pi-check-circle"></i>
+      {{ successMessage() }}
+    </div>
+  }
+
+  @if (showMemberForm() && canManage()) {
+    <div class="invitation-backdrop" (click)="closeMemberForm()">
+      <section
+        class="invitation-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="member-form-title"
+        (click)="$event.stopPropagation()"
+      >
+        <div class="invitation-panel-header">
+          <div>
+            <h3 id="member-form-title">
+              {{ editingMember() ? 'Editar usuário' : 'Adicionar usuário' }}
+            </h3>
+            <p>
+              Informe os dados do usuário. Se a conta ainda não existir,
+              será criado um pré-cadastro.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            class="close-invitation"
+            (click)="closeMemberForm()"
+            aria-label="Fechar formulário"
+          >
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+
+        <div class="invitation-form">
+          <div class="invitation-field">
+            <label for="memberName">Nome do usuário</label>
+            <input
+              id="memberName"
+              type="text"
+              class="invitation-input"
+              placeholder="Nome completo"
+              [value]="memberName()"
+              (input)="updateMemberName($any($event.target).value)"
+              [disabled]="memberFormLoading()"
+            />
+          </div>
+
+          <div class="invitation-field">
+            <label for="memberEmail">E-mail do usuário</label>
+            <input
+              id="memberEmail"
+              type="email"
+              class="invitation-input"
+              placeholder="usuario@empresa.com"
+              [value]="memberEmail()"
+              (input)="updateMemberEmail($any($event.target).value)"
+              [disabled]="memberFormLoading() ||
+                (!!editingMember() && !editingMember()?.pendingRegistrationId)"
+            />
+            <small class="invitation-help">
+              Se a conta ainda não existir, aparecerá como pendente.
+            </small>
+          </div>
+
+          <div class="invitation-field">
+            <label for="memberRole">Perfil do usuário</label>
+            <select
+              id="memberRole"
+              [value]="memberRole()"
+              (change)="memberRole.set($any($event.target).value)"
+              [disabled]="memberFormLoading()"
+            >
+              <option value="employee">Funcionário</option>
+              <option value="manager">Gerente</option>
+              <option value="admin">Administrador</option>
+            </select>
+          </div>
+
+          <fieldset class="permissions-field">
+            <legend>Permissões do usuário</legend>
+
+            <label class="permission-option">
+              <input
+                type="checkbox"
+                [checked]="memberPermissions().view"
+                (change)="updateMemberPermission('view', $any($event.target).checked)"
+                [disabled]="memberFormLoading()"
+              />
+              <span>Visualizar dados</span>
+            </label>
+
+            <label class="permission-option">
+              <input
+                type="checkbox"
+                [checked]="memberPermissions().create"
+                (change)="updateMemberPermission('create', $any($event.target).checked)"
+                [disabled]="memberFormLoading()"
+              />
+              <span>Salvar novos dados</span>
+            </label>
+
+            <label class="permission-option">
+              <input
+                type="checkbox"
+                [checked]="memberPermissions().update"
+                (change)="updateMemberPermission('update', $any($event.target).checked)"
+                [disabled]="memberFormLoading()"
+              />
+              <span>Editar dados</span>
+            </label>
+
+            <label class="permission-option">
+              <input
+                type="checkbox"
+                [checked]="memberPermissions().delete"
+                (change)="updateMemberPermission('delete', $any($event.target).checked)"
+                [disabled]="memberFormLoading()"
+              />
+              <span>Excluir dados</span>
+            </label>
+          </fieldset>
+
+          @if (memberFormError()) {
+            <div class="invitation-error" role="alert">
+              <i class="pi pi-exclamation-circle"></i>
+              {{ memberFormError() }}
+            </div>
+          }
+
+          <div class="invitation-form-actions">
+            <button
+              type="button"
+              class="refresh-button"
+              (click)="closeMemberForm()"
+              [disabled]="memberFormLoading()"
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="button"
+              class="invite-button"
+              (click)="addMember()"
+              [disabled]="memberFormLoading()"
+            >
+              @if (memberFormLoading()) {
+                <i class="pi pi-spin pi-spinner"></i>
+                Salvando...
+              } @else {
+                <i class="pi pi-user-plus"></i>
+                {{ editingMember() ? 'Salvar alterações' : 'Cadastrar usuário' }}
+              }
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+  }
+
+  @if (canManage()) {
+    <div class="stats-grid">
+      <article class="stat-card">
+        <span>Membros cadastrados</span>
+        <strong>{{ members().length }}</strong>
+      </article>
+      <article class="stat-card">
+        <span>Membros ativos</span>
+        <strong>{{ activeCount() }}</strong>
+      </article>
+      <article class="stat-card">
+        <span>Administradores</span>
+        <strong>{{ adminCount() }}</strong>
+      </article>
+    </div>
+
+    <div class="members-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Usuários</h2>
+          <p>Usuários associados ou pré-cadastrados na organização.</p>
+        </div>
+      </div>
+
+      <div class="filters">
+        <div class="search-field">
+          <i class="pi pi-search"></i>
+          <input
+            type="search"
+            placeholder="Buscar por nome ou e-mail"
+            [value]="searchTerm()"
+            (input)="updateSearch($any($event.target).value)"
+          />
+        </div>
+
+        <select
+          [value]="roleFilter()"
+          (change)="updateRole($any($event.target).value)"
+        >
+          <option value="all">Todos os perfis</option>
+          <option value="owner">Proprietário</option>
+          <option value="admin">Administrador</option>
+          <option value="manager">Gerente</option>
+          <option value="employee">Funcionário</option>
+        </select>
+      </div>
+
+      @if (loading()) {
+        <div class="empty-state">
+          <i class="pi pi-spin pi-spinner"></i>
+          <p>Carregando membros...</p>
+        </div>
+      } @else if (filteredMembers().length === 0) {
+        <div class="empty-state">
+          <i class="pi pi-users"></i>
+          <p>Nenhum membro encontrado.</p>
+        </div>
+      } @else {
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Usuário</th>
+                <th>Perfil</th>
+                <th>Ações</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              @for (member of filteredMembers(); track member.id) {
+                <tr>
+                  <td>
+                    <div class="member-cell">
+                      <div class="avatar">
+                        <i class="pi pi-user"></i>
+                      </div>
+                      <div>
+                        <strong>{{ member.name || member.email || 'Usuário' }}</strong>
+                        <small>{{ member.email || member.userId }}</small>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span
+                      class="role-badge"
+                      [class.owner]="member.role === 'owner'"
+                      [class.admin]="member.role === 'admin'"
+                    >
+                      {{ roleLabel(member.role) }}
+                    </span>
+                  </td>
+                  <td>
+                    @if (canModifyMember(member)) {
+                      <div class="member-actions">
+                        <button
+                          type="button"
+                          class="member-action-button"
+                          (click)="openMemberForm(member)"
+                          title="Editar usuário"
+                          aria-label="Editar usuário"
+                        >
+                          <i class="pi pi-pencil"></i>
+                        </button>
+
+                        <button
+                          type="button"
+                          class="member-action-button member-action-danger"
+                          (click)="deleteMember(member)"
+                          title="Excluir usuário"
+                          aria-label="Excluir usuário"
+                        >
+                          <i class="pi pi-trash"></i>
+                        </button>
+                      </div>
+                    } @else {
+                      <span class="member-action-muted">Protegido</span>
+                    }
+                  </td>
+                  <td>
+                    <span
+                      class="status-badge"
+                      [class.inactive]="!member.active && !member.pendingRegistrationId"
+                       [class.pending]="isPendingMember(member)"
+                    >
+                      {{ isPendingMember(member)
+                        ? 'Aguardando cadastro'
+                        : (member.active ? 'Ativo' : 'Inativo') }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  } @else if (!loading() && !errorMessage()) {
+    <div class="empty-state">
+      <i class="pi pi-lock"></i>
+      <p>Você não possui permissão para gerenciar os membros.</p>
+    </div>
+  }
+</section>

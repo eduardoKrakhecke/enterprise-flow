@@ -1,0 +1,74 @@
+
+<section class="invitation-page">
+
+  <div class="invitation-card">
+
+    <div class="invitation-icon">
+      <i class="pi pi-envelope"></i>
+    </div>
+
+    <h1>Aceitar convite</h1>
+
+    <p class="description">
+      Recebeu um convite para participar de uma organização?
+      Informe o código abaixo para continuar.
+    </p>
+
+    @if (errorMessage()) {
+      <div class="alert alert-danger" role="alert">
+        {{ errorMessage() }}
+      </div>
+    }
+
+    @if (successMessage()) {
+      <div class="alert alert-success" role="status">
+        {{ successMessage() }}
+      </div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="accept()">
+
+      <label for="invitationCode">
+        Código do convite
+      </label>
+
+      <input
+        id="invitationCode"
+        type="text"
+        formControlName="code"
+        placeholder="Cole o código recebido"
+        autocomplete="off"
+      />
+
+      @if (
+        form.controls.code.invalid &&
+        form.controls.code.touched
+        ) {
+        <small class="field-error">
+          Informe um código de convite válido.
+        </small>
+      }
+
+      <button
+        type="submit"
+        [disabled]="loading()"
+      >
+        @if (loading()) {
+          <i class="pi pi-spin pi-spinner"></i>
+          Validando convite...
+        } @else {
+          <i class="pi pi-check"></i>
+          Aceitar convite
+        }
+      </button>
+
+    </form>
+
+    <a routerLink="/login" class="back-link">
+      Sair e entrar com outra conta
+    </a>
+
+  </div>
+
+</section>
+

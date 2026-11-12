@@ -41,7 +41,8 @@ export const tenantGuard: CanActivateFn = async () => {
     if (selectedOrganization) {
 
       tenantContext.setActiveTenant(
-        selectedOrganization.tenant
+        selectedOrganization.tenant,
+        selectedOrganization.member
       );
 
       return true;
@@ -50,7 +51,8 @@ export const tenantGuard: CanActivateFn = async () => {
     if (organizations.length === 1) {
 
       tenantContext.setActiveTenant(
-        organizations[0].tenant
+        organizations[0].tenant,
+        organizations[0].member
       );
 
       return true;

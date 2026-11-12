@@ -6,17 +6,9 @@ import {
   Router
 } from '@angular/router';
 
-import {
-  Auth,
-  authState
-} from '@angular/fire/auth';
+import { Auth } from '@angular/fire/auth';
 
-import {
-  map,
-  take
-} from 'rxjs';
-
-export const authGuard: CanActivateFn = (
+export const authGuard: CanActivateFn = async (
   route,
   state
 ) => {
@@ -24,26 +16,19 @@ export const authGuard: CanActivateFn = (
   const auth = inject(Auth);
   const router = inject(Router);
 
-  return authState(auth).pipe(
+  await auth.authStateReady();
 
-    take(1),
+  if (auth.currentUser) {
+    return true;
+  }
 
-    map(user => {
-
-      if (user) {
-        return true;
+  return router.createUrlTree(
+    ['/login'],
+    {
+      queryParams: {
+        returnUrl: state.url
       }
-
-      return router.createUrlTree(
-        ['/login'],
-        {
-          queryParams: {
-            returnUrl: state.url
-          }
-        }
-      );
-
-    })
-
+    }
   );
+
 };

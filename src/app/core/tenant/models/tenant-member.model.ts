@@ -5,6 +5,13 @@ export type TenantRole =
   | 'manager'
   | 'employee';
 
+export interface TenantPermissions {
+  view: boolean;
+  create: boolean;
+  update: boolean;
+  delete: boolean;
+}
+
 export interface TenantMember {
   id: string;
   tenantId: string;
@@ -12,5 +19,10 @@ export interface TenantMember {
   role: TenantRole;
   active: boolean;
   createdAt: unknown;
+  invitationId?: string;
+  pendingRegistrationId?: string;
+  name?: string;
+  email?: string;
+  permissions?: TenantPermissions;
 }
 

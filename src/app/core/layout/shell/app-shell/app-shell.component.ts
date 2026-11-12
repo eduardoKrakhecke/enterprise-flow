@@ -65,7 +65,9 @@ export class AppShellComponent {
 
       await this.authService.logout();
 
-      await this.router.navigateByUrl('/auth/login');
+      this.tenantContext.clear();
+
+      await this.router.navigateByUrl('/login');
 
     } finally {
 

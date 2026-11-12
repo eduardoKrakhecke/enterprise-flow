@@ -12,6 +12,10 @@ import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/auth/services/auth.service';
 import { AuthErrorService } from '../../../../core/auth/services/auth-error.service';
 
+import {
+  TenantMemberService
+} from '../../../../core/tenant/services/tenant-member.service';
+
 @Component({
   selector: 'app-register-page',
   standalone: true,
@@ -25,6 +29,7 @@ export class RegisterPage {
   private readonly authService = inject(AuthService);
   private readonly errorService = inject(AuthErrorService);
   private readonly router = inject(Router);
+  private readonly memberService = inject(TenantMemberService);
 
   readonly loading = signal(false);
   readonly errorMessage = signal('');
@@ -83,8 +88,13 @@ export class RegisterPage {
         password
       );
 
+      const wasAssociated =
+        await this.memberService.activatePendingMemberships();
+
       await this.router.navigateByUrl(
-        '/onboarding/create-organization'
+        wasAssociated
+          ? '/app/dashboard'
+          : '/onboarding/create-organization'
       );
 
     } catch (error) {

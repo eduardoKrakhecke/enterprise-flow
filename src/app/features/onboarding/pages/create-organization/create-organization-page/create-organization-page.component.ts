@@ -84,7 +84,8 @@ export class CreateOrganizationPage {
       }
 
       this.tenantContext.setActiveTenant(
-        createdOrganization.tenant
+        createdOrganization.tenant,
+        createdOrganization.member
       );
 
       await this.router.navigateByUrl('/app/dashboard');

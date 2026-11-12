@@ -46,7 +46,7 @@ export class TenantService {
     input: CreateTenantInput
   ): Promise<CreateTenantResult> {
 
-    const user = this.authService.getCurrentFirebaseUser();
+    const user = await this.authService.getCurrentFirebaseUser();
 
     if (!user) {
       throw new Error('UNAUTHENTICATED');
@@ -131,7 +131,7 @@ export class TenantService {
 
   async getMyTenants(): Promise<UserTenant[]> {
 
-    const user = this.authService.getCurrentFirebaseUser();
+    const user = await this.authService.getCurrentFirebaseUser();
 
     if (!user) {
       return [];

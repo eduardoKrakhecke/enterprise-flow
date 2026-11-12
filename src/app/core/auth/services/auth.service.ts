@@ -10,6 +10,7 @@ import {
   Auth,
   authState,
   createUserWithEmailAndPassword,
+  getRedirectResult,
   signInWithEmailAndPassword,
   signInWithPopup,
   GoogleAuthProvider,
@@ -19,8 +20,14 @@ import {
   User
 } from '@angular/fire/auth';
 
-import { toSignal } from '@angular/core/rxjs-interop';
+import {
+  Firestore,
+  doc,
+  serverTimestamp,
+  setDoc
+} from '@angular/fire/firestore';
 
+import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthUser } from '../models/auth-user.model';
 
 @Injectable({
@@ -29,6 +36,7 @@ import { AuthUser } from '../models/auth-user.model';
 export class AuthService {
 
   private readonly auth = inject(Auth);
+  private readonly firestore = inject(Firestore);
   private readonly environmentInjector = inject(EnvironmentInjector);
 
   private readonly authState$ = authState(this.auth);
@@ -74,6 +82,14 @@ export class AuthService {
     ));
   }
 
+  async completeGoogleRedirectLogin(): Promise<boolean> {
+    const result = await this.runInInjectionContext(() =>
+      getRedirectResult(this.auth)
+    );
+
+    return result !== null;
+  }
+
   async register(
     name: string,
     email: string,
@@ -90,6 +106,19 @@ export class AuthService {
     await this.runInInjectionContext(() => updateProfile(credential.user, {
       displayName: name
     }));
+
+    await setDoc(
+      doc(this.firestore, 'users', credential.user.uid),
+      {
+        name,
+        email: credential.user.email ?? email.trim().toLowerCase(),
+        photoURL: credential.user.photoURL ?? null,
+        active: true,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      },
+      { merge: true }
+    );
   }
 
   async sendPasswordReset(
@@ -104,6 +133,28 @@ export class AuthService {
 
   async logout(): Promise<void> {
     await this.runInInjectionContext(() => signOut(this.auth));
+  }
+
+  async ensureCurrentUserProfile(): Promise<void> {
+    await this.auth.authStateReady();
+
+    const user = this.auth.currentUser;
+
+    if (!user) {
+      return;
+    }
+
+    await setDoc(
+      doc(this.firestore, 'users', user.uid),
+      {
+        name: user.displayName ?? 'Usuário',
+        email: user.email ?? '',
+        photoURL: user.photoURL ?? null,
+        active: true,
+        updatedAt: serverTimestamp()
+      },
+      { merge: true }
+    );
   }
 
   private runInInjectionContext<T>(operation: () => T): T {
@@ -121,7 +172,8 @@ export class AuthService {
     };
   }
 
-  getCurrentFirebaseUser(): User | null {
+  async getCurrentFirebaseUser(): Promise<User | null> {
+    await this.auth.authStateReady();
     return this.auth.currentUser;
   }
 }

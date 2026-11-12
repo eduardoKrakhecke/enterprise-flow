@@ -79,7 +79,8 @@ export class OrganizationSelectionPage implements OnInit {
   ): Promise<void> {
 
     this.tenantContext.setActiveTenant(
-      item.tenant
+      item.tenant,
+      item.member
     );
 
     await this.router.navigateByUrl(

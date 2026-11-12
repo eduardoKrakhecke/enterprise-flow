@@ -2,6 +2,7 @@
 import {
   Component,
   inject,
+  OnInit,
   signal
 } from '@angular/core';
 
@@ -27,6 +28,11 @@ import {
   TenantContextService
 } from '../../../../core/tenant/services/tenant-context.service';
 
+import {
+  TenantMemberService
+} from '../../../../core/tenant/services/tenant-member.service';
+
+
 @Component({
   selector: 'app-login-page',
   standalone: true,
@@ -37,7 +43,7 @@ import {
   templateUrl: './login-page.html',
   styleUrl: './login-page.scss'
 })
-export class LoginPage {
+export class LoginPage implements OnInit {
 
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
@@ -45,8 +51,8 @@ export class LoginPage {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly tenantService = inject(TenantService);
-
   private readonly tenantContext = inject(TenantContextService);
+  private readonly memberService = inject(TenantMemberService);
 
   readonly loading = signal(false);
   readonly errorMessage = signal('');
@@ -63,6 +69,29 @@ export class LoginPage {
       Validators.minLength(6)
     ]]
   });
+
+  async ngOnInit(): Promise<void> {
+    this.loading.set(true);
+
+    try {
+      const redirected =
+        await this.authService.completeGoogleRedirectLogin();
+      const authenticatedUser =
+        await this.authService.getCurrentFirebaseUser();
+
+      if (redirected || authenticatedUser) {
+        await this.synchronizeUserData();
+        await this.navigateAfterLogin();
+      }
+    } catch (error) {
+      console.error('Erro no retorno da autenticação Google:', error);
+      this.errorMessage.set(
+        this.errorService.getMessage(error)
+      );
+    } finally {
+      this.loading.set(false);
+    }
+  }
 
   async login(): Promise<void> {
 
@@ -84,9 +113,12 @@ export class LoginPage {
         password
       );
 
+      await this.synchronizeUserData();
       await this.navigateAfterLogin();
 
     } catch (error) {
+
+      console.error('Erro no login com e-mail:', error);
 
       this.errorMessage.set(
         this.errorService.getMessage(error)
@@ -107,10 +139,12 @@ export class LoginPage {
     try {
 
       await this.authService.loginWithGoogle();
-
+      await this.synchronizeUserData();
       await this.navigateAfterLogin();
 
     } catch (error) {
+
+      console.error('Erro no login com Google:', error);
 
       this.errorMessage.set(
         this.errorService.getMessage(error)
@@ -147,7 +181,8 @@ export class LoginPage {
     if (organizations.length === 1) {
 
       this.tenantContext.setActiveTenant(
-        organizations[0].tenant
+        organizations[0].tenant,
+        organizations[0].member
       );
 
       const destination =
@@ -163,5 +198,17 @@ export class LoginPage {
     await this.router.navigateByUrl(
       '/organizations/select'
     );
+  }
+
+  private async synchronizeUserData(): Promise<void> {
+    try {
+      await this.authService.ensureCurrentUserProfile();
+      await this.memberService.activatePendingMemberships();
+    } catch (error) {
+      console.error(
+        'NÃ£o foi possÃ­vel sincronizar o perfil do usuÃ¡rio:',
+        error
+      );
+    }
   }
 }

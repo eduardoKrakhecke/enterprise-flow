@@ -1,0 +1,119 @@
+
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+.invitation-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+  background: var(--p-surface-50, #f8fafc);
+  color: var(--p-text-color, #1f2937);
+}
+
+.invitation-card {
+  width: 100%;
+  max-width: 460px;
+  padding: 36px;
+  border-radius: 16px;
+  background: var(--p-content-background, #fff);
+  border: 1px solid var(--p-content-border-color, #e2e8f0);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.06);
+  text-align: center;
+}
+
+.invitation-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  background: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+
+  i {
+    font-size: 1.8rem;
+  }
+}
+
+h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.description {
+  color: var(--p-text-muted-color, #64748b);
+  line-height: 1.6;
+  margin-bottom: 28px;
+}
+
+form {
+  text-align: left;
+
+  label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  input {
+    width: 100%;
+    min-height: 46px;
+    padding: 12px 14px;
+    border: 1px solid var(--p-content-border-color, #cbd5e1);
+    border-radius: 9px;
+    background: var(--p-content-background, #fff);
+    color: var(--p-text-color, #1f2937);
+    outline: none;
+
+    &:focus {
+      border-color: #3b82f6;
+    }
+  }
+
+  button {
+    width: 100%;
+    min-height: 46px;
+    margin-top: 20px;
+    border: 0;
+    border-radius: 9px;
+    background: #2563eb;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    i {
+      margin-right: 6px;
+    }
+  }
+}
+
+.field-error {
+  display: block;
+  margin-top: 6px;
+  color: #ef4444;
+}
+
+.back-link {
+  display: inline-block;
+  margin-top: 24px;
+  color: #3b82f6;
+  text-decoration: none;
+}
+
+@media (max-width: 480px) {
+  .invitation-card {
+    padding: 24px;
+  }
+}
+
