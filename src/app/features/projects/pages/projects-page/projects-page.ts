@@ -34,6 +34,7 @@ import { TenantMemberService } from "../../../../core/tenant/services/tenant-mem
 import { TenantMember } from "../../../../core/tenant/models/tenant-member.model";
 import { ClientService } from '../../../clients/services/client.service';
 import { Client } from '../../../clients/models/client.model';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-projects-page',
@@ -47,6 +48,7 @@ export class ProjectsPage implements OnInit {
   private readonly projectService = inject(ProjectService);
   private readonly tenantContext = inject(TenantContextService);
   private readonly fb = inject(FormBuilder);
+  private readonly router = inject(Router);
 
   private readonly memberService = inject(TenantMemberService);
   private readonly clientService = inject(ClientService);
@@ -170,6 +172,12 @@ export class ProjectsPage implements OnInit {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  openProjectTasks(project: Project): void {
+    void this.router.navigate(['/app/tasks'], {
+      queryParams: { projectId: project.id }
+    });
   }
 
   async openCreateForm(): Promise<void> {

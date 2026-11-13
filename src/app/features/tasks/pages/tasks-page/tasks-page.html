@@ -1,0 +1,77 @@
+<section class="tasks-page">
+  <header class="page-header">
+    <div><h1>Tarefas</h1><p>Organize as atividades dos projetos da sua organização.</p></div>
+    <div class="header-actions">
+      <button type="button" class="secondary-button" (click)="loadTasks()" [disabled]="loading()">Atualizar</button>
+      @if (canCreate()) {
+        <button type="button" class="primary-button" (click)="openCreateForm()" [disabled]="loadingOptions()">Nova tarefa</button>
+      }
+    </div>
+  </header>
+
+  @if (errorMessage()) { <div class="message error-message" role="alert">{{ errorMessage() }}</div> }
+  @if (successMessage()) { <div class="message success-message" role="status">{{ successMessage() }}</div> }
+
+  @if (!canView()) {
+    <div class="empty-state">Você não possui permissão para visualizar tarefas.</div>
+  } @else {
+    <div class="stats-grid">
+      <div class="stat-card"><strong>{{ totalTasks() }}</strong><span>Total</span></div>
+      <div class="stat-card"><strong>{{ pendingCount() }}</strong><span>Pendentes</span></div>
+      <div class="stat-card"><strong>{{ inProgressCount() }}</strong><span>Em andamento</span></div>
+      <div class="stat-card"><strong>{{ completedCount() }}</strong><span>Concluídas</span></div>
+      <div class="stat-card"><strong>{{ overdueCount() }}</strong><span>Atrasadas</span></div>
+    </div>
+
+    @if (showForm()) {
+      <section class="panel">
+        <div class="panel-header"><h2>{{ editingTaskId() ? 'Editar tarefa' : 'Nova tarefa' }}</h2><button type="button" class="secondary-button" (click)="closeForm()">Fechar</button></div>
+        <form [formGroup]="taskForm" (ngSubmit)="saveTask()">
+          <div class="form-grid">
+            <div class="form-field"><label for="taskProject">Projeto *</label>
+              <select id="taskProject" formControlName="projectId">
+                <option value="">Selecione um projeto</option>
+                @for (project of projects(); track project.id) { <option [value]="project.id">{{ project.name }}</option> }
+              </select>
+            </div>
+            <div class="form-field"><label for="taskTitle">Título *</label><input id="taskTitle" formControlName="title" maxlength="150" placeholder="Ex.: Criar tela de login" />
+              @if (taskForm.controls.title.invalid && taskForm.controls.title.touched) { <small class="field-error">Informe um título válido.</small> }
+            </div>
+            <div class="form-field full-width"><label for="taskDescription">Descrição</label><textarea id="taskDescription" formControlName="description" rows="3" maxlength="3000"></textarea></div>
+            <div class="form-field"><label for="taskAssignee">Responsável</label><select id="taskAssignee" formControlName="assignedTo"><option value="">Sem responsável</option>
+              @for (member of activeMembers(); track member.id) { <option [value]="member.userId">{{ member.name || member.email || member.userId }}</option> }
+            </select></div>
+            <div class="form-field"><label for="taskPriority">Prioridade</label><select id="taskPriority" formControlName="priority"><option value="low">Baixa</option><option value="medium">Média</option><option value="high">Alta</option><option value="critical">Crítica</option></select></div>
+            <div class="form-field"><label for="taskStatus">Status</label><select id="taskStatus" formControlName="status" [attr.disabled]="editingTaskId() ? null : true"><option value="pending">Pendente</option><option value="in_progress">Em andamento</option><option value="completed">Concluída</option><option value="cancelled">Cancelada</option></select></div>
+            <div class="form-field"><label for="taskDueDate">Prazo</label><input id="taskDueDate" type="date" formControlName="dueDate" /></div>
+          </div>
+          <div class="form-actions"><button type="button" class="secondary-button" (click)="closeForm()" [disabled]="saving()">Cancelar</button><button type="submit" class="primary-button" [disabled]="saving() || loadingOptions()">{{ saving() ? 'Salvando...' : 'Salvar tarefa' }}</button></div>
+        </form>
+      </section>
+    }
+
+    <section class="panel">
+      <div class="panel-header"><h2>Tarefas cadastradas</h2></div>
+      <div class="filters">
+        <input type="search" placeholder="Buscar por título ou descrição" [value]="searchTerm()" (input)="searchTerm.set($any($event.target).value)" />
+        <select aria-label="Filtrar por projeto" [value]="projectFilter()" (change)="projectFilter.set($any($event.target).value)"><option value="all">Todos os projetos</option>@for (project of projects(); track project.id) { <option [value]="project.id">{{ project.name }}</option> }</select>
+        <select aria-label="Filtrar por status" [value]="statusFilter()" (change)="statusFilter.set($any($event.target).value)"><option value="all">Todos os status</option><option value="pending">Pendente</option><option value="in_progress">Em andamento</option><option value="completed">Concluída</option><option value="cancelled">Cancelada</option></select>
+      </div>
+      @if (loading()) { <div class="empty-state">Carregando tarefas...</div> }
+      @else if (filteredTasks().length === 0) { <div class="empty-state">Nenhuma tarefa encontrada.</div> }
+      @else {
+        <div class="table-container"><table><thead><tr><th>Tarefa</th><th>Projeto</th><th>Responsável</th><th>Status</th><th>Prioridade</th><th>Prazo</th><th>Ações</th></tr></thead><tbody>
+          @for (task of filteredTasks(); track task.id) {
+            <tr><td><div class="task-name"><strong>{{ task.title }}</strong><small>{{ task.description }}</small></div></td><td>{{ projectName(task.projectId) }}</td><td>{{ assigneeName(task.assignedTo) }}</td><td><span class="status-badge" [class]="task.status">{{ statusLabel(task.status) }}</span></td><td>{{ priorityLabel(task.priority) }}</td><td>{{ task.dueDate ? (task.dueDate.toDate() | date:'dd/MM/yyyy') : '—' }}</td><td><div class="table-actions">
+              @if (canUpdate()) { <button type="button" class="secondary-button" (click)="openEditForm(task)" [attr.aria-label]="'Editar ' + task.title">Editar</button> }
+              @if (canDelete()) { <button type="button" class="danger-button" (click)="requestDelete(task)" [attr.aria-label]="'Excluir ' + task.title">Excluir</button> }
+            </div></td></tr>
+          }
+        </tbody></table></div>
+      }
+    </section>
+    @if (deletingTaskId()) {
+      <div class="modal-backdrop"><section class="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="delete-task-title"><h2 id="delete-task-title">Excluir tarefa?</h2><p>Esta ação é permanente.</p><div class="form-actions"><button type="button" class="secondary-button" (click)="cancelDelete()" [disabled]="saving()">Cancelar</button><button type="button" class="danger-button" (click)="confirmDelete()" [disabled]="saving()">Excluir</button></div></section></div>
+    }
+  }
+</section>

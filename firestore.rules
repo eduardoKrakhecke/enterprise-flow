@@ -568,6 +568,94 @@ match /invitations/{invitationId} {
 }
 
 
+    function validTask(data) {
+      return data.keys().hasAll([
+          'tenantId', 'projectId', 'title', 'description',
+          'assignedTo', 'status', 'priority', 'dueDate',
+          'completedAt', 'createdBy', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'tenantId', 'projectId', 'title', 'description',
+          'assignedTo', 'status', 'priority', 'dueDate',
+          'completedAt', 'createdBy', 'createdAt', 'updatedAt'
+        ])
+        && data.tenantId is string
+        && data.projectId is string
+        && data.title is string
+        && data.title.size() > 0
+        && data.title.size() <= 150
+        && data.description is string
+        && data.description.size() <= 3000
+        && (
+          data.assignedTo == null
+          || data.assignedTo is string
+        )
+        && data.status in [
+          'pending', 'in_progress', 'completed', 'cancelled'
+        ]
+        && data.priority in [
+          'low', 'medium', 'high', 'critical'
+        ]
+        && (
+          data.dueDate == null
+          || data.dueDate is timestamp
+        )
+        && (
+          data.completedAt == null
+          || data.completedAt is timestamp
+        )
+        && data.createdBy is string
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function validTaskProject(data) {
+      return exists(
+        /databases/$(database)/documents/projects/$(data.projectId)
+      )
+      && get(
+        /databases/$(database)/documents/projects/$(data.projectId)
+      ).data.tenantId == data.tenantId;
+    }
+
+    match /tasks/{taskId} {
+
+      allow read: if canProjectAction(
+        resource.data.tenantId, 'view'
+      );
+
+      allow create: if validTask(request.resource.data)
+        && canProjectAction(
+          request.resource.data.tenantId, 'create'
+        )
+        && validTaskProject(request.resource.data)
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.completedAt == null
+        && request.resource.data.createdAt <= request.time
+        && request.resource.data.createdAt
+          >= request.time - duration.value(5, 'm')
+        && request.resource.data.updatedAt
+          == request.resource.data.createdAt;
+
+      allow update: if canProjectAction(
+          resource.data.tenantId, 'update'
+        )
+        && validTask(request.resource.data)
+        && request.resource.data.tenantId == resource.data.tenantId
+        && request.resource.data.projectId == resource.data.projectId
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt >= resource.data.updatedAt
+        && request.resource.data.updatedAt <= request.time
+        && validTaskProject(request.resource.data);
+
+      allow delete: if canProjectAction(
+        resource.data.tenantId, 'delete'
+      );
+    }
+
+
     // Bloqueio padrão.
     match /projects/{projectId} {
 
