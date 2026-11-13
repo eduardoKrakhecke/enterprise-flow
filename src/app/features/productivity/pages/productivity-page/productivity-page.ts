@@ -8,7 +8,6 @@ import {
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
 
 import {
   Chart,
@@ -20,13 +19,16 @@ import { Task } from '../../../tasks/models/task.model';
 
 import { ProjectService } from '../../../projects/services/project.service';
 import { Project } from '../../../projects/models/project.model';
+import { TenantMemberService } from '../../../../core/tenant/services/tenant-member.service';
+import { TenantMember } from '../../../../core/tenant/models/tenant-member.model';
+import { TenantContextService } from '../../../../core/tenant/services/tenant-context.service';
 
 Chart.register(...registerables);
 
 @Component({
   selector: 'app-productivity-page',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule],
   templateUrl: './productivity-page.html',
   styleUrl: './productivity-page.scss'
 })
@@ -34,14 +36,20 @@ export class ProductivityPage implements OnInit {
 
   private readonly taskService = inject(TaskService);
   private readonly projectService = inject(ProjectService);
+  private readonly memberService = inject(TenantMemberService);
+  private readonly tenantContext = inject(TenantContextService);
 
   readonly tasks = signal<Task[]>([]);
   readonly projects = signal<Project[]>([]);
+  readonly members = signal<TenantMember[]>([]);
 
   readonly loading = signal(false);
   readonly errorMessage = signal('');
 
   readonly selectedProject = signal('');
+  readonly startDate = signal('');
+  readonly endDate = signal('');
+  readonly dateError = signal('');
 
   readonly filteredTasks = computed(() => {
     const projectId = this.selectedProject();
@@ -51,7 +59,9 @@ export class ProductivityPage implements OnInit {
     }
 
     return this.tasks().filter(
-      task => task.projectId === projectId
+      task =>
+        (!projectId || task.projectId === projectId) &&
+        this.isWithinSelectedPeriod(task)
     );
   });
 
@@ -126,8 +136,58 @@ export class ProductivityPage implements OnInit {
     ];
   });
 
+  readonly responsibleData = computed(() => {
+    const grouped = new Map<string, {
+      name: string;
+      assigned: number;
+      completed: number;
+      overdue: number;
+    }>();
+
+    for (const task of this.filteredTasks()) {
+      if (!task.assignedTo) continue;
+
+      const member = this.members().find(
+        item => item.userId === task.assignedTo
+      );
+      const current = grouped.get(task.assignedTo) ?? {
+        name: member?.name || member?.email || 'Responsável não identificado',
+        assigned: 0,
+        completed: 0,
+        overdue: 0
+      };
+
+      current.assigned++;
+
+      if (task.status === 'completed') {
+        current.completed++;
+      }
+
+      if (this.isTaskOverdue(task)) {
+        current.overdue++;
+      }
+
+      grouped.set(task.assignedTo, current);
+    }
+
+    return Array.from(grouped.values());
+  });
+
+  readonly projectTaskData = computed(() =>
+    this.projects()
+      .map(project => ({
+        name: project.name,
+        total: this.filteredTasks().filter(
+          task => task.projectId === project.id
+        ).length
+      }))
+      .filter(project => project.total > 0)
+  );
+
   private statusChart?: Chart;
   private priorityChart?: Chart;
+  private responsibleChart?: Chart;
+  private projectChart?: Chart;
 
   async ngOnInit(): Promise<void> {
     await this.loadData();
@@ -141,13 +201,18 @@ export class ProductivityPage implements OnInit {
     this.priorityChart?.destroy();
 
     try {
-      const [tasks, projects] = await Promise.all([
+      const tenantId = this.tenantContext.activeTenantId();
+      const [tasks, projects, members] = await Promise.all([
         this.taskService.getTasks(),
-        this.projectService.getProjects()
+        this.projectService.getProjects(),
+        tenantId
+          ? this.memberService.getMembers(tenantId)
+          : Promise.resolve([] as TenantMember[])
       ]);
 
       this.tasks.set(tasks);
       this.projects.set(projects);
+      this.members.set(members);
 
     } catch (error) {
       console.error(error);
@@ -171,9 +236,27 @@ export class ProductivityPage implements OnInit {
     });
   }
 
+  changePeriod(start: string, end: string): void {
+    this.startDate.set(start);
+    this.endDate.set(end);
+
+    if (start && end && start > end) {
+      this.dateError.set('A data inicial não pode ser posterior à data final.');
+      return;
+    }
+
+    this.dateError.set('');
+
+    setTimeout(() => {
+      this.renderCharts();
+    });
+  }
+
   private renderCharts(): void {
     this.statusChart?.destroy();
     this.priorityChart?.destroy();
+    this.responsibleChart?.destroy();
+    this.projectChart?.destroy();
 
     const statusCanvas = document.getElementById(
       'productivityStatusChart'
@@ -181,6 +264,14 @@ export class ProductivityPage implements OnInit {
 
     const priorityCanvas = document.getElementById(
       'productivityPriorityChart'
+    ) as HTMLCanvasElement | null;
+
+    const responsibleCanvas = document.getElementById(
+      'productivityResponsibleChart'
+    ) as HTMLCanvasElement | null;
+
+    const projectCanvas = document.getElementById(
+      'productivityProjectChart'
     ) as HTMLCanvasElement | null;
 
     if (statusCanvas) {
@@ -250,5 +341,103 @@ export class ProductivityPage implements OnInit {
         }
       });
     }
+
+    if (responsibleCanvas) {
+      const data = this.responsibleData();
+
+      this.responsibleChart = new Chart(responsibleCanvas, {
+        type: 'bar',
+        data: {
+          labels: data.map(item => item.name),
+          datasets: [
+            {
+              label: 'Atribuídas',
+              data: data.map(item => item.assigned),
+              backgroundColor: '#60a5fa'
+            },
+            {
+              label: 'Concluídas',
+              data: data.map(item => item.completed),
+              backgroundColor: '#34d399'
+            },
+            {
+              label: 'Atrasadas',
+              data: data.map(item => item.overdue),
+              backgroundColor: '#f87171'
+            }
+          ]
+        },
+        options: this.barChartOptions()
+      });
+    }
+
+    if (projectCanvas) {
+      const data = this.projectTaskData();
+
+      this.projectChart = new Chart(projectCanvas, {
+        type: 'bar',
+        data: {
+          labels: data.map(item => item.name),
+          datasets: [{
+            label: 'Tarefas',
+            data: data.map(item => item.total),
+            backgroundColor: '#818cf8'
+          }]
+        },
+        options: {
+          ...this.barChartOptions(),
+          plugins: {
+            legend: { display: false }
+          }
+        }
+      });
+    }
+  }
+
+  private barChartOptions() {
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { precision: 0 }
+        }
+      }
+    };
+  }
+
+  private isWithinSelectedPeriod(task: Task): boolean {
+    const start = this.startDate();
+    const end = this.endDate();
+
+    if (!start && !end) return true;
+    if (!task.dueDate) return false;
+
+    const dueDate = task.dueDate.toDate();
+    dueDate.setHours(0, 0, 0, 0);
+
+    if (start) {
+      const startDate = new Date(`${start}T00:00:00`);
+      if (dueDate < startDate) return false;
+    }
+
+    if (end) {
+      const endDate = new Date(`${end}T23:59:59`);
+      if (dueDate > endDate) return false;
+    }
+
+    return true;
+  }
+
+  private isTaskOverdue(task: Task): boolean {
+    if (!task.dueDate || task.status === 'completed' || task.status === 'cancelled') {
+      return false;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return task.dueDate.toDate() < today;
   }
 }

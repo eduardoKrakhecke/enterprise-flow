@@ -25,22 +25,50 @@
   }
 
   <div class="filters">
-    <label for="projectFilter">Filtrar por projeto</label>
+    <div class="filter-field">
+      <label for="projectFilter">Filtrar por projeto</label>
 
-    <select
-      id="projectFilter"
-      #projectSelect
-      [value]="selectedProject()"
-      (change)="changeProject(projectSelect.value)"
-    >
-      <option value="">Todos os projetos</option>
+      <select
+        id="projectFilter"
+        #projectSelect
+        [value]="selectedProject()"
+        (change)="changeProject(projectSelect.value)"
+      >
+        <option value="">Todos os projetos</option>
 
-      @for (project of projects(); track project.id) {
-        <option [value]="project.id">
-          {{ project.name }}
-        </option>
-      }
-    </select>
+        @for (project of projects(); track project.id) {
+          <option [value]="project.id">
+            {{ project.name }}
+          </option>
+        }
+      </select>
+    </div>
+
+    <div class="filter-field">
+      <label for="productivityStartDate">Vencimento a partir de</label>
+      <input
+        id="productivityStartDate"
+        type="date"
+        #startDateInput
+        [value]="startDate()"
+        (change)="changePeriod(startDateInput.value, endDateInput.value)"
+      />
+    </div>
+
+    <div class="filter-field">
+      <label for="productivityEndDate">Vencimento até</label>
+      <input
+        id="productivityEndDate"
+        type="date"
+        #endDateInput
+        [value]="endDate()"
+        (change)="changePeriod(startDateInput.value, endDateInput.value)"
+      />
+    </div>
+
+    @if (dateError()) {
+      <small class="filter-error">{{ dateError() }}</small>
+    }
   </div>
 
   @if (loading()) {
@@ -93,6 +121,28 @@
 
         <div class="chart-container">
           <canvas id="productivityPriorityChart"></canvas>
+        </div>
+      </article>
+
+      <article class="chart-card full-width-chart">
+        <h2>Produtividade por responsável</h2>
+        <p class="chart-description">
+          Tarefas atribuídas, concluídas e atrasadas por membro da equipe.
+        </p>
+
+        <div class="chart-container">
+          <canvas id="productivityResponsibleChart"></canvas>
+        </div>
+      </article>
+
+      <article class="chart-card full-width-chart">
+        <h2>Tarefas por projeto</h2>
+        <p class="chart-description">
+          Comparativo de tarefas dos projetos da organização.
+        </p>
+
+        <div class="chart-container">
+          <canvas id="productivityProjectChart"></canvas>
         </div>
       </article>
 
