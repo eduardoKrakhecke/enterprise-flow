@@ -9,6 +9,8 @@ import { ProjectService } from '../../../projects/services/project.service';
 import { Project } from '../../../projects/models/project.model';
 import { TaskService } from '../../services/task.service';
 import { Task, TaskPriority, TaskStatus, CreateTaskInput } from '../../models/task.model';
+import { TaskActivity } from '../../models/task-activity.model';
+import { TaskActivityService } from '../../services/task-activity.service';
 import { TaskKanban } from '../../components/task-kanban/task-kanban.component';
 
 @Component({
@@ -20,6 +22,7 @@ import { TaskKanban } from '../../components/task-kanban/task-kanban.component';
 })
 export class TasksPage implements OnInit {
   private readonly taskService = inject(TaskService);
+  private readonly taskActivityService = inject(TaskActivityService);
   private readonly projectService = inject(ProjectService);
   private readonly memberService = inject(TenantMemberService);
   private readonly tenantContext = inject(TenantContextService);
@@ -45,6 +48,12 @@ export class TasksPage implements OnInit {
   readonly showForm = signal(false);
   readonly editingTaskId = signal<string | null>(null);
   readonly deletingTaskId = signal<string | null>(null);
+  readonly selectedActivityTask = signal<Task | null>(null);
+  readonly activities = signal<TaskActivity[]>([]);
+  readonly loadingActivities = signal(false);
+  readonly savingComment = signal(false);
+  readonly commentText = signal('');
+  readonly activityError = signal('');
 
   readonly viewMode = signal<'list' | 'kanban'>('list');
   readonly movingTaskId = signal<string | null>(null);
@@ -112,6 +121,67 @@ export class TasksPage implements OnInit {
     } finally {
       this.movingTaskId.set(null);
     }
+  }
+
+  async openTaskActivities(task: Task): Promise<void> {
+    this.selectedActivityTask.set(task);
+    this.activities.set([]);
+    this.commentText.set('');
+    this.activityError.set('');
+    this.loadingActivities.set(true);
+
+    try {
+      this.activities.set(
+        await this.taskActivityService.getActivities(task.id)
+      );
+    } catch (error) {
+      console.error('Erro ao carregar atividades:', error);
+      this.activityError.set('Não foi possível carregar as atividades.');
+    } finally {
+      this.loadingActivities.set(false);
+    }
+  }
+
+  closeTaskActivities(): void {
+    this.selectedActivityTask.set(null);
+    this.activities.set([]);
+    this.commentText.set('');
+    this.activityError.set('');
+  }
+
+  async submitComment(): Promise<void> {
+    const task = this.selectedActivityTask();
+    const message = this.commentText().trim();
+
+    if (!task || !message || this.savingComment() || !this.canCreate()) {
+      return;
+    }
+
+    this.savingComment.set(true);
+    this.activityError.set('');
+
+    try {
+      await this.taskActivityService.addComment(
+        task.id,
+        task.projectId,
+        message
+      );
+
+      this.commentText.set('');
+      this.activities.set(
+        await this.taskActivityService.getActivities(task.id)
+      );
+    } catch (error) {
+      console.error('Erro ao enviar comentário:', error);
+      this.activityError.set('Não foi possível enviar o comentário.');
+    } finally {
+      this.savingComment.set(false);
+    }
+  }
+
+  activityUserName(userId: string): string {
+    const member = this.members().find(item => item.userId === userId);
+    return member?.name || member?.email || userId;
   }
 
   async loadOptions(): Promise<void> {

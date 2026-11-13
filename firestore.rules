@@ -655,6 +655,52 @@ match /invitations/{invitationId} {
       );
     }
 
+    match /taskActivities/{activityId} {
+
+      allow read: if isAuthenticated()
+        && canProjectAction(resource.data.tenantId, 'view');
+
+      allow create: if isAuthenticated()
+        && request.resource.data.keys().hasAll([
+          'tenantId', 'taskId', 'projectId', 'type',
+          'userId', 'message', 'previousStatus',
+          'newStatus', 'createdAt'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'tenantId', 'taskId', 'projectId', 'type',
+          'userId', 'message', 'previousStatus',
+          'newStatus', 'createdAt'
+        ])
+        && request.resource.data.tenantId is string
+        && request.resource.data.taskId is string
+        && request.resource.data.projectId is string
+        && request.resource.data.type == 'comment'
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.message is string
+        && request.resource.data.message.size() > 0
+        && request.resource.data.message.size() <= 2000
+        && request.resource.data.previousStatus == null
+        && request.resource.data.newStatus == null
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.createdAt <= request.time
+        && request.resource.data.createdAt
+          >= request.time - duration.value(5, 'm')
+        && canProjectAction(
+          request.resource.data.tenantId, 'create'
+        )
+        && exists(
+          /databases/$(database)/documents/tasks/$(request.resource.data.taskId)
+        )
+        && get(
+          /databases/$(database)/documents/tasks/$(request.resource.data.taskId)
+        ).data.tenantId == request.resource.data.tenantId
+        && get(
+          /databases/$(database)/documents/tasks/$(request.resource.data.taskId)
+        ).data.projectId == request.resource.data.projectId;
+
+      allow update, delete: if false;
+    }
+
 
     // Bloqueio padrão.
     match /projects/{projectId} {

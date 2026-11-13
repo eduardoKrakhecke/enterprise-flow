@@ -94,6 +94,9 @@
             <tr><td><div class="task-name"><strong>{{ task.title }}</strong><small>{{ task.description }}</small></div></td><td>{{ projectName(task.projectId) }}</td><td>{{ assigneeName(task.assignedTo) }}</td><td><span class="status-badge" [class]="task.status">{{ statusLabel(task.status) }}</span></td><td>{{ priorityLabel(task.priority) }}</td><td>{{ task.dueDate ? (task.dueDate.toDate() | date:'dd/MM/yyyy') : '—' }}</td><td><div class="table-actions">
               @if (canUpdate()) { <button type="button" class="secondary-button" (click)="openEditForm(task)" [attr.aria-label]="'Editar ' + task.title">Editar</button> }
               @if (canDelete()) { <button type="button" class="danger-button" (click)="requestDelete(task)" [attr.aria-label]="'Excluir ' + task.title">Excluir</button> }
+              <button type="button" class="icon-button" title="Ver atividades" [attr.aria-label]="'Ver atividades de ' + task.title" (click)="openTaskActivities(task)">
+                <i class="pi pi-comments"></i>
+              </button>
             </div></td></tr>
           }
         </tbody></table></div>
@@ -102,6 +105,73 @@
     </section>
     @if (deletingTaskId()) {
       <div class="modal-backdrop"><section class="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="delete-task-title"><h2 id="delete-task-title">Excluir tarefa?</h2><p>Esta ação é permanente.</p><div class="form-actions"><button type="button" class="secondary-button" (click)="cancelDelete()" [disabled]="saving()">Cancelar</button><button type="button" class="danger-button" (click)="confirmDelete()" [disabled]="saving()">Excluir</button></div></section></div>
+    }
+    @if (selectedActivityTask(); as task) {
+      <div class="modal-backdrop">
+        <section
+          class="confirm-dialog activity-dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="task-activities-title"
+        >
+          <div class="panel-header">
+            <div>
+              <h2 id="task-activities-title">Atividades da tarefa</h2>
+              <p>{{ task.title }}</p>
+            </div>
+            <button
+              type="button"
+              class="icon-button"
+              aria-label="Fechar atividades"
+              (click)="closeTaskActivities()"
+            >
+              <i class="pi pi-times"></i>
+            </button>
+          </div>
+
+          <div class="activity-composer">
+            <label for="taskComment">Novo comentário</label>
+            <textarea
+              id="taskComment"
+              rows="4"
+              maxlength="2000"
+              placeholder="Escreva um comentário sobre esta tarefa..."
+              [value]="commentText()"
+              (input)="commentText.set($any($event.target).value)"
+              [disabled]="savingComment() || !canCreate()"
+            ></textarea>
+            <div class="activity-actions">
+              <button
+                type="button"
+                class="primary-button"
+                (click)="submitComment()"
+                [disabled]="savingComment() || !commentText().trim() || !canCreate()"
+              >
+                <i class="pi pi-send"></i>
+                {{ savingComment() ? 'Enviando...' : 'Enviar comentário' }}
+              </button>
+            </div>
+          </div>
+
+          @if (loadingActivities()) {
+            <div class="empty-state">Carregando atividades...</div>
+          } @else if (activityError()) {
+            <div class="message error-message">{{ activityError() }}</div>
+          } @else if (activities().length === 0) {
+            <div class="empty-state">Nenhuma atividade registrada.</div>
+          } @else {
+            <div class="activity-list">
+              @for (activity of activities(); track activity.id) {
+                <article class="activity-item">
+                  <strong>{{ activityUserName(activity.userId) }}</strong>
+                  <p>{{ activity.message }}</p>
+                  <small>{{ activity.createdAt.toDate() | date:'dd/MM/yyyy HH:mm' }}</small>
+                </article>
+              }
+            </div>
+          }
+        </section>
+      </div>
     }
   }
 </section>
