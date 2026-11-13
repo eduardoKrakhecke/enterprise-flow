@@ -9,11 +9,12 @@ import { ProjectService } from '../../../projects/services/project.service';
 import { Project } from '../../../projects/models/project.model';
 import { TaskService } from '../../services/task.service';
 import { Task, TaskPriority, TaskStatus, CreateTaskInput } from '../../models/task.model';
+import { TaskKanban } from '../../components/task-kanban/task-kanban.component';
 
 @Component({
   selector: 'app-tasks-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, TaskKanban],
   templateUrl: './tasks-page.html',
   styleUrl: './tasks-page.scss'
 })
@@ -44,6 +45,9 @@ export class TasksPage implements OnInit {
   readonly showForm = signal(false);
   readonly editingTaskId = signal<string | null>(null);
   readonly deletingTaskId = signal<string | null>(null);
+
+  readonly viewMode = signal<'list' | 'kanban'>('list');
+  readonly movingTaskId = signal<string | null>(null);
 
   readonly activeMembers = computed(() => this.members().filter(member => member.active));
   readonly filteredTasks = computed(() => {
@@ -84,6 +88,30 @@ export class TasksPage implements OnInit {
     if (projectId) this.projectFilter.set(projectId);
     await this.loadOptions();
     await this.loadTasks();
+  }
+
+  async changeTaskStatus(
+    event: { task: Task; status: TaskStatus }
+  ): Promise<void> {
+    if (!this.canUpdate() || this.movingTaskId()) return;
+
+    this.movingTaskId.set(event.task.id);
+    this.errorMessage.set('');
+    this.successMessage.set('');
+
+    try {
+      await this.taskService.updateTask(event.task.id, {
+        status: event.status
+      });
+
+      await this.loadTasks();
+      this.successMessage.set('Status atualizado com sucesso.');
+    } catch (error) {
+      console.error('Erro ao mover tarefa:', error);
+      this.errorMessage.set('Não foi possível atualizar o status.');
+    } finally {
+      this.movingTaskId.set(null);
+    }
   }
 
   async loadOptions(): Promise<void> {

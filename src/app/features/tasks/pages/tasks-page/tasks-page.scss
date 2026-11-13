@@ -21,6 +21,41 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .danger-button { background: #991b1b; color: white; }
 .form-actions { justify-content: flex-end; margin-top: 18px; }
 .filters { display: grid; grid-template-columns: minmax(220px, 2fr) repeat(2,minmax(150px,1fr)); gap: 12px; margin: 16px 0; }
+.view-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  margin: 4px 0 20px;
+  background: var(--app-surface, #ffffff);
+  border: 1px solid var(--app-border, #e2e8f0);
+  border-radius: 10px;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 38px;
+    padding: 8px 14px;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--app-muted, #64748b);
+    font-weight: 600;
+
+    &:hover:not(.active) {
+      background: var(--app-hover, #f1f5f9);
+      color: var(--app-text, #1e293b);
+    }
+
+    &.active {
+      background: #2563eb;
+      border-color: #2563eb;
+      color: #ffffff;
+    }
+  }
+}
 .table-container { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; text-align: left; }
 th, td { padding: 14px 10px; border-bottom: 1px solid #374151; vertical-align: middle; }

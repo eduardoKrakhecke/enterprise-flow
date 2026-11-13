@@ -57,9 +57,38 @@
         <select aria-label="Filtrar por projeto" [value]="projectFilter()" (change)="projectFilter.set($any($event.target).value)"><option value="all">Todos os projetos</option>@for (project of projects(); track project.id) { <option [value]="project.id">{{ project.name }}</option> }</select>
         <select aria-label="Filtrar por status" [value]="statusFilter()" (change)="statusFilter.set($any($event.target).value)"><option value="all">Todos os status</option><option value="pending">Pendente</option><option value="in_progress">Em andamento</option><option value="completed">Concluída</option><option value="cancelled">Cancelada</option></select>
       </div>
+      <div class="view-switch">
+        <button
+          type="button"
+          [class.active]="viewMode() === 'list'"
+          (click)="viewMode.set('list')"
+        >
+          <i class="pi pi-list"></i>
+          Lista
+        </button>
+
+        <button
+          type="button"
+          [class.active]="viewMode() === 'kanban'"
+          (click)="viewMode.set('kanban')"
+        >
+          <i class="pi pi-th-large"></i>
+          Kanban
+        </button>
+      </div>
+
       @if (loading()) { <div class="empty-state">Carregando tarefas...</div> }
       @else if (filteredTasks().length === 0) { <div class="empty-state">Nenhuma tarefa encontrada.</div> }
       @else {
+        @if (viewMode() === 'kanban') {
+          <app-task-kanban
+            [tasks]="filteredTasks()"
+            [members]="members()"
+            [canUpdate]="canUpdate()"
+            [busyTaskId]="movingTaskId()"
+            (statusChange)="changeTaskStatus($event)"
+          />
+        } @else {
         <div class="table-container"><table><thead><tr><th>Tarefa</th><th>Projeto</th><th>Responsável</th><th>Status</th><th>Prioridade</th><th>Prazo</th><th>Ações</th></tr></thead><tbody>
           @for (task of filteredTasks(); track task.id) {
             <tr><td><div class="task-name"><strong>{{ task.title }}</strong><small>{{ task.description }}</small></div></td><td>{{ projectName(task.projectId) }}</td><td>{{ assigneeName(task.assignedTo) }}</td><td><span class="status-badge" [class]="task.status">{{ statusLabel(task.status) }}</span></td><td>{{ priorityLabel(task.priority) }}</td><td>{{ task.dueDate ? (task.dueDate.toDate() | date:'dd/MM/yyyy') : '—' }}</td><td><div class="table-actions">
@@ -68,6 +97,7 @@
             </div></td></tr>
           }
         </tbody></table></div>
+        }
       }
     </section>
     @if (deletingTaskId()) {

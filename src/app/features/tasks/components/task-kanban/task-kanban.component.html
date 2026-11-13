@@ -1,0 +1,46 @@
+<div class="kanban-board">
+  @for (column of columns; track column.status) {
+    <section class="kanban-column" [attr.data-status]="column.status"
+             (dragover)="onDragOver($event)" (drop)="onDrop($event, column.status)">
+      <header class="column-header">
+        <h3>{{ column.label }}</h3>
+        <span>{{ groupedTasks()[column.status].length }}</span>
+      </header>
+      <div class="column-tasks">
+        @for (task of groupedTasks()[column.status]; track task.id) {
+          <article class="task-card" [class.busy]="busyTaskId() === task.id"
+                   [attr.draggable]="canUpdate() && !busyTaskId() ? 'true' : 'false'"
+                   (dragstart)="onDragStart($event, task)" (dragend)="onDragEnd()">
+            <strong>{{ task.title }}</strong>
+            @if (task.description) { <p>{{ task.description }}</p> }
+            <div class="task-meta">
+              <span class="priority" [attr.data-priority]="task.priority">{{ priorityLabel(task.priority) }}</span>
+              @if (task.dueDate) { <time>{{ task.dueDate.toDate() | date:'dd/MM/yyyy' }}</time> }
+            </div>
+            @if (task.assignedTo) {
+              <small
+                class="assignee"
+                [title]="assigneeName(task.assignedTo)"
+              >
+                Responsável: {{ assigneeName(task.assignedTo) }}
+              </small>
+            }
+            @if (canUpdate()) {
+              <label class="status-control">
+                <span>Mover para</span>
+                <select [value]="task.status" [disabled]="!!busyTaskId()"
+                        (change)="move(task, $any($event.target).value)">
+                  @for (option of columns; track option.status) {
+                    <option [value]="option.status">{{ option.label }}</option>
+                  }
+                </select>
+              </label>
+            }
+          </article>
+        } @empty {
+          <p class="empty-column">Nenhuma tarefa</p>
+        }
+      </div>
+    </section>
+  }
+</div>
