@@ -1,4 +1,5 @@
 
+
 import {
   Component,
   OnInit,
@@ -31,6 +32,8 @@ import {
 } from '../../models/project.model';
 import { TenantMemberService } from "../../../../core/tenant/services/tenant-member.service";
 import { TenantMember } from "../../../../core/tenant/models/tenant-member.model";
+import { ClientService } from '../../../clients/services/client.service';
+import { Client } from '../../../clients/models/client.model';
 
 @Component({
   selector: 'app-projects-page',
@@ -46,9 +49,18 @@ export class ProjectsPage implements OnInit {
   private readonly fb = inject(FormBuilder);
 
   private readonly memberService = inject(TenantMemberService);
+  private readonly clientService = inject(ClientService);
 
   readonly members = signal<TenantMember[]>([]);
   readonly loadingMembers = signal(false);
+  readonly availableClients = signal<Client[]>([]);
+  readonly loadingClients = signal(false);
+  readonly clientsLoadError = signal('');
+
+  isSelectedClientAvailable(): boolean {
+    const id = this.projectForm.controls.clientId.value;
+    return !id || this.availableClients().some(client => client.id === id);
+  }
 
   readonly activeMembers = computed(() =>
     this.members().filter(member => member.active)
@@ -76,6 +88,7 @@ export class ProjectsPage implements OnInit {
     name: ['', [Validators.required, Validators.maxLength(150)]],
     description: ['', Validators.maxLength(3000)],
     clientName: ['', Validators.maxLength(150)],
+    clientId: [null as string | null],
     responsibleUserId: [''],
     status: ['planned' as ProjectStatus, Validators.required],
     priority: ['medium' as ProjectPriority, Validators.required],
@@ -159,8 +172,10 @@ export class ProjectsPage implements OnInit {
     }
   }
 
-  openCreateForm(): void {
+  async openCreateForm(): Promise<void> {
     if (!this.canCreate()) return;
+
+    await this.loadAvailableClients();
 
     this.editingProjectId.set(null);
     this.errorMessage.set('');
@@ -168,6 +183,7 @@ export class ProjectsPage implements OnInit {
       name: '',
       description: '',
       clientName: '',
+      clientId: null,
       responsibleUserId: '',
       status: 'planned',
       priority: 'medium',
@@ -178,22 +194,32 @@ export class ProjectsPage implements OnInit {
     this.showForm.set(true);
   }
 
-  openEditForm(project: Project): void {
+  async openEditForm(project: Project): Promise<void> {
     if (!this.canUpdate()) return;
+
+    await this.loadAvailableClients();
 
     this.editingProjectId.set(project.id);
     this.errorMessage.set('');
+
+    // Projetos antigos podem não ter clientId. Nesse caso, tenta localizar
+    // o cliente pelo nome para manter o vínculo no formulário.
+    const clientId = project.clientId ?? this.availableClients().find(
+      client => client.name === project.clientName
+    )?.id ?? null;
 
     this.projectForm.setValue({
       name: project.name,
       description: project.description,
       clientName: project.clientName,
+      clientId,
       responsibleUserId: project.responsibleUserId ?? '',
       status: project.status,
       priority: project.priority,
       startDate: this.toDateInput(project.startDate),
       dueDate: this.toDateInput(project.dueDate)
     });
+
 
     this.showForm.set(true);
   }
@@ -206,7 +232,7 @@ export class ProjectsPage implements OnInit {
   }
 
   async saveProject(): Promise<void> {
-    if (this.projectForm.invalid || this.saving()) {
+    if (this.projectForm.invalid || this.saving() || this.loadingClients()) {
       this.projectForm.markAllAsTouched();
       return;
     }
@@ -217,7 +243,34 @@ export class ProjectsPage implements OnInit {
       return;
     }
 
+    if (this.clientsLoadError()) {
+      this.errorMessage.set('Não foi possível validar o cliente. Recarregue os clientes e tente novamente.');
+      return;
+    }
+
     const value = this.projectForm.getRawValue();
+    const clientId = this.projectForm.controls.clientId.value;
+
+    const selectedClient = this.availableClients().find(
+      client => client.id === clientId
+    );
+
+    if (clientId && !selectedClient) {
+      this.errorMessage.set('Selecione um cliente válido e ativo.');
+      return;
+    }
+
+    const originalProject = editingId
+      ? this.projects().find(project => project.id === editingId)
+      : undefined;
+
+    // Preserva o nome legado quando o projeto ainda não tem clientId.
+    const clientName = selectedClient?.name ?? (
+      !clientId && originalProject && !originalProject.clientId
+        ? originalProject.clientName
+        : ''
+    );
+
     const startDate = this.parseDate(value.startDate);
     const dueDate = this.parseDate(value.dueDate);
 
@@ -236,7 +289,8 @@ export class ProjectsPage implements OnInit {
       const input: CreateProjectInput = {
         name: value.name,
         description: value.description,
-        clientName: value.clientName,
+        clientId: selectedClient?.id ?? null,
+        clientName,
         responsibleUserId: value.responsibleUserId.trim() || null,
         priority: value.priority,
         startDate,
@@ -325,6 +379,25 @@ export class ProjectsPage implements OnInit {
       );
     } finally {
       this.loadingMembers.set(false);
+    }
+  }
+
+  async loadAvailableClients(): Promise<void> {
+    this.loadingClients.set(true);
+    this.clientsLoadError.set('');
+
+    try {
+      const clients = await this.clientService.getClients();
+
+      this.availableClients.set(
+        clients.filter(client => client.status === 'active')
+      );
+    } catch (error) {
+      console.error('Erro ao carregar clientes:', error);
+      this.availableClients.set([]);
+      this.clientsLoadError.set('Não foi possível carregar os clientes desta organização.');
+    } finally {
+      this.loadingClients.set(false);
     }
   }
 

@@ -3,7 +3,6 @@ import { Injectable, inject } from '@angular/core';
 
 import {
   Firestore,
-  Timestamp,
   collection,
   doc,
   addDoc,
@@ -12,7 +11,8 @@ import {
   where,
   orderBy,
   updateDoc,
-  deleteDoc
+  deleteDoc,
+  serverTimestamp
 } from '@angular/fire/firestore';
 
 import { Auth } from '@angular/fire/auth';
@@ -97,7 +97,7 @@ export class ClientService {
       'clients'
     );
 
-    const now = Timestamp.now();
+    const now = serverTimestamp();
 
     const documentRef = await addDoc(clientsRef, {
       ...input,
@@ -128,7 +128,7 @@ export class ClientService {
 
     await updateDoc(clientRef, {
       ...input,
-      updatedAt: Timestamp.now()
+      updatedAt: serverTimestamp()
     });
   }
 

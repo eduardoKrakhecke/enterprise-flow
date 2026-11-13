@@ -1,4 +1,5 @@
 
+
 <section class="projects-page">
 
   <header class="page-header">
@@ -98,14 +99,39 @@
             </div>
 
             <div class="form-field">
-              <label for="clientName">Cliente</label>
-              <input
-                id="clientName"
-                type="text"
-                formControlName="clientName"
-                maxlength="150"
-                placeholder="Nome do cliente"
-              />
+              <label for="projectClient">
+                Cliente
+              </label>
+
+              <select
+                id="projectClient"
+                formControlName="clientId"
+                [attr.disabled]="loadingClients() || clientsLoadError() ? true : null"
+              >
+                <option [ngValue]="null">
+                  Nenhum cliente selecionado
+                </option>
+
+                @if (editingProjectId() && projectForm.controls.clientId.value &&
+                !isSelectedClientAvailable()) {
+                  <option [value]="projectForm.controls.clientId.value" disabled>
+                    Cliente vinculado indisponível
+                  </option>
+                }
+
+                @for (client of availableClients(); track client.id) {
+                  <option [value]="client.id">
+                    {{ client.name }}
+                  </option>
+                }
+              </select>
+
+              @if (loadingClients()) {
+                <small>Carregando clientes...</small>
+              }
+              @if (clientsLoadError()) {
+                <small class="field-error" role="alert">{{ clientsLoadError() }}</small>
+              }
             </div>
 
             <div class="form-field full-width">
@@ -223,7 +249,7 @@
             <button
               type="submit"
               class="primary-button"
-              [disabled]="saving()"
+              [disabled]="saving() || loadingClients() || !!clientsLoadError()"
             >
               @if (saving()) {
                 <i class="pi pi-spin pi-spinner"></i>

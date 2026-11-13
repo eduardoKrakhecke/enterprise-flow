@@ -19,6 +19,7 @@ export interface Project {
   name: string;
   description: string;
   clientName: string;
+  clientId?: string | null;
   responsibleUserId: string | null;
   status: ProjectStatus;
   priority: ProjectPriority;
@@ -33,19 +34,14 @@ export interface CreateProjectInput {
   name: string;
   description: string;
   clientName: string;
+  clientId?: string | null;
   responsibleUserId: string | null;
   priority: ProjectPriority;
   startDate: Date | null;
   dueDate: Date | null;
 }
 
-export interface UpdateProjectInput {
-  name?: string;
-  description?: string;
-  clientName?: string;
-  responsibleUserId?: string | null;
+export interface UpdateProjectInput
+  extends Partial<CreateProjectInput> {
   status?: ProjectStatus;
-  priority?: ProjectPriority;
-  startDate?: Date | null;
-  dueDate?: Date | null;
 }

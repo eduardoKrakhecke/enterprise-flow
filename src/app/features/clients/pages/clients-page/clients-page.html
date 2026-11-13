@@ -74,7 +74,11 @@
 
             <div class="form-field">
               <label for="clientType">Tipo de cliente</label>
-              <select id="clientType" formControlName="type">
+              <select
+                id="clientType"
+                formControlName="type"
+                (change)="onDocumentTypeChange()"
+              >
                 <option value="company">Pessoa jurídica</option>
                 <option value="individual">Pessoa física</option>
               </select>
@@ -101,6 +105,8 @@
                 id="clientDocument"
                 type="text"
                 formControlName="document"
+                inputmode="numeric"
+                [attr.maxlength]="clientForm.controls.type.value === 'individual' ? 14 : 18"
                 (input)="formatDocument()"
               />
 

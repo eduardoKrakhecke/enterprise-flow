@@ -106,6 +106,7 @@ export class ProjectService {
       tenantId,
       name: input.name.trim(),
       description: input.description.trim(),
+      clientId: input.clientId ?? null,
       clientName: input.clientName.trim(),
       responsibleUserId: input.responsibleUserId,
       status: 'planned',
@@ -155,6 +156,10 @@ export class ProjectService {
 
     if (input.clientName !== undefined) {
       updates['clientName'] = input.clientName.trim();
+    }
+
+    if (input.clientId !== undefined) {
+      updates['clientId'] = input.clientId ?? null;
     }
 
     if (input.responsibleUserId !== undefined) {
