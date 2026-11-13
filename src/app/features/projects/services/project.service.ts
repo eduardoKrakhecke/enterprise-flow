@@ -208,4 +208,24 @@ export class ProjectService {
 
     await deleteDoc(projectRef);
   }
+
+
+  async getProjectsByClient(clientId: string): Promise<Project[]> {
+    const tenantId = this.tenantContext.activeTenantId();
+
+    if (!tenantId) {
+      throw new Error('Nenhuma organização selecionada.');
+    }
+
+    if (!this.tenantContext.hasPermission('view')) {
+      throw new Error('Sem permissão para visualizar projetos.');
+    }
+
+    const projects = await this.getProjects();
+
+    return projects.filter(project =>
+      project.clientId === clientId
+    );
+  }
+
 }

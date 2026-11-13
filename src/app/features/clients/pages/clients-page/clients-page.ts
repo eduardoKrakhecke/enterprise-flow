@@ -35,11 +35,12 @@ import {
   documentValidator,
   onlyDigits
 } from '../../../../shared/validators/document.validator';
+import {ClientDetails} from "../../components/client-details/client-details";
 
 @Component({
   selector: 'app-clients-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, ClientDetails],
   templateUrl: './clients-page.html',
   styleUrl: './clients-page.scss'
 })
@@ -49,6 +50,9 @@ export class ClientsPage implements OnInit {
   private readonly tenantContext = inject(TenantContextService);
   private readonly fb = inject(FormBuilder);
   private readonly cepService = inject(CepService);
+
+  readonly selectedClient = signal<Client | null>(null);
+
 
   readonly canView = computed(() =>
     this.tenantContext.hasPermission('view')
@@ -149,6 +153,14 @@ export class ClientsPage implements OnInit {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  openClientDetails(client: Client): void {
+    this.selectedClient.set(client);
+  }
+
+  closeClientDetails(): void {
+    this.selectedClient.set(null);
   }
 
   openCreateForm(): void {

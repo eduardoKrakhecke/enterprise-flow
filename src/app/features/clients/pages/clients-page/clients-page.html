@@ -359,6 +359,16 @@
                           <i class="pi pi-trash"></i>
                         </button>
                       }
+
+                      <button
+                        type="button"
+                        class="icon-button"
+                        title="Ver detalhes"
+                        aria-label="Ver detalhes do cliente"
+                        (click)="openClientDetails(client)"
+                      >
+                        <i class="pi pi-eye"></i>
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -402,6 +412,27 @@
         </div>
       </div>
     }
+  }
+  @if (selectedClient(); as client) {
+    <div class="modal-backdrop">
+      <section
+        class="confirm-dialog client-details-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Detalhes do cliente"
+      >
+        <button
+          type="button"
+          class="icon-button"
+          aria-label="Fechar detalhes"
+          (click)="closeClientDetails()"
+        >
+          <i class="pi pi-times"></i>
+        </button>
+
+        <app-client-details [client]="client" />
+      </section>
+    </div>
   }
 
 </section>

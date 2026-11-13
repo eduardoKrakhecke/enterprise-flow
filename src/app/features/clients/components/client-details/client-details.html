@@ -1,0 +1,88 @@
+
+<section class="client-details">
+
+  <header class="details-header">
+    <div>
+      <h2>{{ client().name }}</h2>
+
+      <p>
+        {{ client().type === 'company'
+        ? 'Pessoa jurídica'
+        : 'Pessoa física' }}
+      </p>
+    </div>
+
+    <span
+      class="status-badge"
+      [class.active]="client().status === 'active'"
+    >
+      {{ client().status === 'active' ? 'Ativo' : 'Inativo' }}
+    </span>
+  </header>
+
+  <div class="client-info">
+    <div>
+      <strong>Documento</strong>
+      <span>{{ client().document || 'Não informado' }}</span>
+    </div>
+
+    <div>
+      <strong>E-mail</strong>
+      <span>{{ client().email || 'Não informado' }}</span>
+    </div>
+
+    <div>
+      <strong>Telefone</strong>
+      <span>{{ client().phone || 'Não informado' }}</span>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <strong>{{ totalProjects() }}</strong>
+      <span>Total de projetos</span>
+    </div>
+
+    <div class="stat-card">
+      <strong>{{ inProgressProjects() }}</strong>
+      <span>Em andamento</span>
+    </div>
+
+    <div class="stat-card">
+      <strong>{{ completedProjects() }}</strong>
+      <span>Concluídos</span>
+    </div>
+  </div>
+
+  <div class="projects-section">
+    <h3>Projetos vinculados</h3>
+
+    @if (loading()) {
+      <p>Carregando projetos...</p>
+    } @else if (errorMessage()) {
+      <p class="error-message">{{ errorMessage() }}</p>
+    } @else if (projects().length === 0) {
+      <p>Nenhum projeto vinculado a este cliente.</p>
+    } @else {
+      <div class="projects-list">
+        @for (project of projects(); track project.id) {
+          <div class="project-item">
+            <div>
+              <strong>{{ project.name }}</strong>
+              <small>{{ project.description }}</small>
+            </div>
+
+            <span class="project-status">
+              @switch (project.status) {
+                @case ('planned') { Planejado }
+                @case ('in_progress') { Em andamento }
+                @case ('completed') { Concluído }
+                @case ('cancelled') { Cancelado }
+              }
+            </span>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</section>

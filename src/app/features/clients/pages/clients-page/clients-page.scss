@@ -362,3 +362,8 @@ table {
     align-items: stretch;
   }
 }
+.client-details-dialog {
+  width: min(900px, 95vw);
+  max-height: 90vh;
+  overflow-y: auto;
+}
