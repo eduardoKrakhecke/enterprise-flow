@@ -29,6 +29,8 @@ import {
   ProjectStatus,
   CreateProjectInput
 } from '../../models/project.model';
+import { TenantMemberService } from "../../../../core/tenant/services/tenant-member.service";
+import { TenantMember } from "../../../../core/tenant/models/tenant-member.model";
 
 @Component({
   selector: 'app-projects-page',
@@ -43,6 +45,14 @@ export class ProjectsPage implements OnInit {
   private readonly tenantContext = inject(TenantContextService);
   private readonly fb = inject(FormBuilder);
 
+  private readonly memberService = inject(TenantMemberService);
+
+  readonly members = signal<TenantMember[]>([]);
+  readonly loadingMembers = signal(false);
+
+  readonly activeMembers = computed(() =>
+    this.members().filter(member => member.active)
+  );
   readonly canView = this.tenantContext.canView;
   readonly canCreate = this.tenantContext.canCreate;
   readonly canUpdate = this.tenantContext.canUpdate;
@@ -123,6 +133,9 @@ export class ProjectsPage implements OnInit {
 
   async ngOnInit(): Promise<void> {
     await this.loadProjects();
+    if (this.canCreate() || this.canUpdate()) {
+      await this.loadMembers();
+    }
   }
 
   async loadProjects(): Promise<void> {
@@ -288,6 +301,30 @@ export class ProjectsPage implements OnInit {
       this.errorMessage.set('Não foi possível excluir o projeto.');
     } finally {
       this.saving.set(false);
+    }
+  }
+
+  async loadMembers(): Promise<void> {
+    const tenantId = this.tenantContext.activeTenantId();
+
+    if (!tenantId) {
+      this.members.set([]);
+      return;
+    }
+
+    this.loadingMembers.set(true);
+
+    try {
+      const members = await this.memberService.getMembers(tenantId);
+      this.members.set(members);
+    } catch (error) {
+      console.error('Erro ao carregar responsáveis:', error);
+      this.members.set([]);
+      this.errorMessage.set(
+        'Não foi possível carregar os responsáveis disponíveis.'
+      );
+    } finally {
+      this.loadingMembers.set(false);
     }
   }
 

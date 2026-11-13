@@ -183,17 +183,52 @@
               />
             </div>
 
+
             <div class="form-field full-width">
+
               <label for="responsibleUserId">
-                Identificador do responsável
+                Responsável pelo projeto
               </label>
-              <input
+
+              <select
                 id="responsibleUserId"
-                type="text"
                 formControlName="responsibleUserId"
-                placeholder="UID do usuário (opcional)"
-              />
+                [disabled]="loadingMembers()"
+              >
+
+                <option value="">
+                  Sem responsável
+                </option>
+
+                @for (member of activeMembers(); track member.id) {
+
+                  <option [value]="member.userId">
+                    {{ member.name || member.email || member.userId }}
+                    — {{ member.role === 'owner'
+                    ? 'Proprietário'
+                    : member.role === 'admin'
+                      ? 'Administrador'
+                      : member.role === 'manager'
+                        ? 'Gerente'
+                        : 'Funcionário' }}
+                  </option>
+
+                }
+
+              </select>
+
+              @if (loadingMembers()) {
+                <small class="field-hint">
+                  Carregando membros...
+                </small>
+              } @else {
+                <small class="field-hint">
+                  Selecione um membro ativo da organização.
+                </small>
+              }
+
             </div>
+
 
           </div>
 

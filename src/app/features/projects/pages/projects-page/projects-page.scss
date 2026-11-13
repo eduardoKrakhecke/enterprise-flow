@@ -400,3 +400,8 @@ table {
     width: 100%;
   }
 }
+
+.field-hint {
+  color: var(--p-text-muted-color, #94a3b8);
+  font-size: 12px;
+}

@@ -96,6 +96,19 @@ service cloud.firestore {
         && data.updatedAt is timestamp;
     }
 
+    function validProjectResponsible(tenantId, userId) {
+      return userId == null
+        || (
+          userId is string
+          && exists(
+            /databases/$(database)/documents/tenantMembers/$(tenantId + '_' + userId)
+          )
+          && get(
+            /databases/$(database)/documents/tenantMembers/$(tenantId + '_' + userId)
+          ).data.active == true
+        );
+    }
+
     function validPermissions(permissions) {
       return permissions.keys().hasOnly([
           'view', 'create', 'update', 'delete'
@@ -542,6 +555,10 @@ match /invitations/{invitationId} {
           >= request.time - duration.value(5, 'm')
         && request.resource.data.updatedAt
           == request.resource.data.createdAt
+        && validProjectResponsible(
+          request.resource.data.tenantId,
+          request.resource.data.responsibleUserId
+        )
         && canProjectAction(
           request.resource.data.tenantId,
           'create'
