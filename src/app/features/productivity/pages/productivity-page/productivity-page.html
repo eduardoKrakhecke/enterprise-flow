@@ -1,0 +1,109 @@
+
+<section class="productivity-page">
+
+  <header class="page-header">
+    <div>
+      <h1>Dashboard de Produtividade</h1>
+      <p>Acompanhe o desempenho das tarefas e projetos.</p>
+    </div>
+
+    <button
+      type="button"
+      class="refresh-button"
+      (click)="loadData()"
+      [disabled]="loading()"
+    >
+      <i class="pi pi-refresh"></i>
+      Atualizar
+    </button>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="error-message">
+      {{ errorMessage() }}
+    </div>
+  }
+
+  <div class="filters">
+    <label for="projectFilter">Filtrar por projeto</label>
+
+    <select
+      id="projectFilter"
+      #projectSelect
+      [value]="selectedProject()"
+      (change)="changeProject(projectSelect.value)"
+    >
+      <option value="">Todos os projetos</option>
+
+      @for (project of projects(); track project.id) {
+        <option [value]="project.id">
+          {{ project.name }}
+        </option>
+      }
+    </select>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-state">
+      Carregando indicadores...
+    </div>
+  } @else {
+
+    <div class="metrics-grid">
+
+      <article class="metric-card">
+        <span>Total de tarefas</span>
+        <strong>{{ totalTasks() }}</strong>
+      </article>
+
+      <article class="metric-card">
+        <span>Concluídas</span>
+        <strong>{{ completedTasks() }}</strong>
+      </article>
+
+      <article class="metric-card">
+        <span>Em andamento</span>
+        <strong>{{ inProgressTasks() }}</strong>
+      </article>
+
+      <article class="metric-card">
+        <span>Atrasadas</span>
+        <strong>{{ overdueTasks() }}</strong>
+      </article>
+
+      <article class="metric-card">
+        <span>Taxa de conclusão</span>
+        <strong>{{ completionRate() }}%</strong>
+      </article>
+
+    </div>
+
+    <div class="charts-grid">
+
+      <article class="chart-card">
+        <h2>Tarefas por status</h2>
+
+        <div class="chart-container">
+          <canvas id="productivityStatusChart"></canvas>
+        </div>
+      </article>
+
+      <article class="chart-card">
+        <h2>Tarefas por prioridade</h2>
+
+        <div class="chart-container">
+          <canvas id="productivityPriorityChart"></canvas>
+        </div>
+      </article>
+
+    </div>
+
+    @if (totalTasks() === 0) {
+      <div class="empty-state">
+        Nenhuma tarefa encontrada para o filtro selecionado.
+      </div>
+    }
+
+  }
+
+</section>

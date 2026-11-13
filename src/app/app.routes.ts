@@ -12,6 +12,7 @@ import {
 import {
   tenantGuard
 } from './core/tenant/guards/tenant.guard';
+import { PRODUCTIVITY_ROUTES } from "./features/productivity/productivity.routes";
 
 export const routes: Routes = [
 
@@ -80,6 +81,12 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/clients/clients.routes')
             .then(m => m.CLIENTS_ROUTES)
+      },
+      {
+        path: 'productivity',
+        loadChildren: () =>
+          import('./features/productivity/productivity.routes')
+            .then(m => m.PRODUCTIVITY_ROUTES)
       },
       {
         path: 'tasks',
