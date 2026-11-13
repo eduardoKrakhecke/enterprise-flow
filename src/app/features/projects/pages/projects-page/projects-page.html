@@ -50,28 +50,6 @@
     </div>
   } @else {
 
-    <div class="stats-grid">
-      <article class="stat-card">
-        <span>Total de projetos</span>
-        <strong>{{ totalProjects() }}</strong>
-      </article>
-
-      <article class="stat-card">
-        <span>Em andamento</span>
-        <strong>{{ inProgressCount() }}</strong>
-      </article>
-
-      <article class="stat-card">
-        <span>Concluídos</span>
-        <strong>{{ completedCount() }}</strong>
-      </article>
-
-      <article class="stat-card">
-        <span>Atrasados</span>
-        <strong>{{ overdueCount() }}</strong>
-      </article>
-    </div>
-
     @if (showForm()) {
       <section class="form-panel">
 

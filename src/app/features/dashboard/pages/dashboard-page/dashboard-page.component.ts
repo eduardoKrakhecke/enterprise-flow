@@ -1,63 +1,78 @@
 
 import {
-  Component
+  Component,
+  OnInit,
+  inject,
+  signal,
+  computed
 } from '@angular/core';
+
+import { Project } from
+    '../../../projects/models/project.model';
+
+import { ProjectService } from
+    '../../../projects/services/project.service';
+
+import { ProjectDashboard } from
+    '../../../projects/components/project-dashboard/project-dashboard';
+
+import { TenantContextService } from
+    '../../../../core/tenant/services/tenant-context.service';
 
 @Component({
   selector: 'app-dashboard-page',
   standalone: true,
+  imports: [
+    ProjectDashboard
+  ],
   templateUrl: './dashboard-page.component.html',
   styleUrl: './dashboard-page.component.scss'
 })
-export class DashboardPageComponent {
+export class DashboardPageComponent implements OnInit {
 
-  readonly indicators = [
-    {
-      title: 'Clientes cadastrados',
-      value: '1.284',
-      variation: '+12,5%',
-      icon: 'pi-users'
-    },
-    {
-      title: 'Projetos ativos',
-      value: '38',
-      variation: '+8,2%',
-      icon: 'pi-briefcase'
-    },
-    {
-      title: 'Receita mensal',
-      value: 'R$ 48.250',
-      variation: '+15,8%',
-      icon: 'pi-wallet'
-    },
-    {
-      title: 'Tarefas pendentes',
-      value: '24',
-      variation: '-4,3%',
-      icon: 'pi-list-check'
-    }
-  ];
+  private readonly projectService = inject(ProjectService);
 
-  readonly activities = [
-    {
-      title: 'Novo cliente cadastrado',
-      description: 'Cliente Empresa Alpha',
-      time: 'Há 15 minutos'
-    },
-    {
-      title: 'Projeto atualizado',
-      description: 'Implantação ERP',
-      time: 'Há 1 hora'
-    },
-    {
-      title: 'Novo usuário adicionado',
-      description: 'Departamento financeiro',
-      time: 'Há 3 horas'
-    },
-    {
-      title: 'Relatório gerado',
-      description: 'Relatório financeiro mensal',
-      time: 'Há 5 horas'
+  readonly tenantContext = inject(TenantContextService);
+
+  readonly canViewProjects = computed(() =>
+    this.tenantContext.hasPermission('view')
+  );
+
+  readonly dashboardProjects = signal<Project[]>([]);
+  readonly projectsLoading = signal(false);
+  readonly projectsError = signal('');
+
+  async ngOnInit(): Promise<void> {
+    await this.loadDashboardProjects();
+  }
+
+  async loadDashboardProjects(): Promise<void> {
+
+    if (!this.canViewProjects()) {
+      this.dashboardProjects.set([]);
+      return;
     }
-  ];
+
+    this.projectsLoading.set(true);
+    this.projectsError.set('');
+
+    try {
+      const projects = await this.projectService.getProjects();
+
+      this.dashboardProjects.set(projects);
+
+    } catch (error) {
+
+      console.error('Erro ao carregar projetos:', error);
+
+      this.dashboardProjects.set([]);
+
+      this.projectsError.set(
+        'Não foi possível carregar os indicadores de projetos.'
+      );
+
+    } finally {
+      this.projectsLoading.set(false);
+    }
+  }
 }

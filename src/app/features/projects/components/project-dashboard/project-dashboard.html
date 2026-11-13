@@ -1,0 +1,87 @@
+
+<section class="project-dashboard">
+
+  <div class="dashboard-heading">
+    <div>
+      <h2>Indicadores de projetos</h2>
+      <p>Acompanhe o desempenho dos projetos da organização.</p>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+
+    <article class="stat-card">
+      <div class="stat-icon total">
+        <i class="pi pi-folder"></i>
+      </div>
+      <span>Total de projetos</span>
+      <strong>{{ stats().total }}</strong>
+    </article>
+
+    <article class="stat-card">
+      <div class="stat-icon progress">
+        <i class="pi pi-sync"></i>
+      </div>
+      <span>Em andamento</span>
+      <strong>{{ stats().inProgress }}</strong>
+    </article>
+
+    <article class="stat-card">
+      <div class="stat-icon completed">
+        <i class="pi pi-check-circle"></i>
+      </div>
+      <span>Concluídos</span>
+      <strong>{{ stats().completed }}</strong>
+    </article>
+
+    <article class="stat-card">
+      <div class="stat-icon overdue">
+        <i class="pi pi-exclamation-triangle"></i>
+      </div>
+      <span>Atrasados</span>
+      <strong>{{ stats().overdue }}</strong>
+    </article>
+
+  </div>
+
+  <div class="charts-grid">
+
+    <article class="chart-card">
+      <div class="chart-heading">
+        <h3>Projetos por status</h3>
+        <p>Distribuição dos projetos cadastrados.</p>
+      </div>
+
+      <div class="chart-container">
+        <canvas
+          #statusChart
+          role="img"
+          aria-label="Gráfico de projetos por status"
+        ></canvas>
+      </div>
+    </article>
+
+    <article class="chart-card">
+      <div class="chart-heading">
+        <h3>Projetos por prioridade</h3>
+        <p>Distribuição por nível de prioridade.</p>
+      </div>
+
+      <div class="chart-container">
+        <canvas
+          #priorityChart
+          role="img"
+          aria-label="Gráfico de projetos por prioridade"
+        ></canvas>
+      </div>
+    </article>
+
+  </div>
+
+  @if (projects().length === 0) {
+    <p class="empty-hint">
+      Nenhum projeto cadastrado para gerar indicadores.
+    </p>
+  }
+
+</section>

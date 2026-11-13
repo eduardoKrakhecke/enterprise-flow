@@ -1,10 +1,14 @@
 
 :host {
   display: block;
+  min-height: 100%;
+  background: var(--app-bg, #f5f7fb);
 }
 
 .projects-page {
+  min-height: 100%;
   padding: 24px;
+  background: var(--app-bg, #f5f7fb);
   color: var(--app-text, #1e293b);
 }
 
@@ -83,35 +87,11 @@ button {
   color: white;
 }
 
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.stat-card,
 .form-panel,
 .projects-panel {
   background: var(--app-surface, #ffffff);
   border: 1px solid var(--app-border, #e2e8f0);
   border-radius: 12px;
-}
-
-.stat-card {
-  padding: 22px;
-
-  span {
-    display: block;
-    color: var(--app-muted, #64748b);
-    font-size: 13px;
-    margin-bottom: 12px;
-  }
-
-  strong {
-    font-size: 30px;
-    font-weight: 700;
-  }
 }
 
 .form-panel,
@@ -365,12 +345,6 @@ table {
   }
 }
 
-@media (max-width: 1000px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
 @media (max-width: 640px) {
   .projects-page {
     padding: 16px;
@@ -385,8 +359,7 @@ table {
     flex-wrap: wrap;
   }
 
-  .form-grid,
-  .stats-grid {
+  .form-grid {
     grid-template-columns: 1fr;
   }
 
@@ -402,6 +375,6 @@ table {
 }
 
 .field-hint {
-  color: var(--p-text-muted-color, #94a3b8);
+  color: var(--app-muted, #64748b);
   font-size: 12px;
 }

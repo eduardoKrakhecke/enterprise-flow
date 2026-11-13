@@ -1,4 +1,3 @@
-
 rules_version = '2';
 
 service cloud.firestore {
@@ -584,6 +583,78 @@ match /invitations/{invitationId} {
         resource.data.tenantId,
         'delete'
       );
+    }
+
+
+    // Clientes: validação do formato persistido pelo ClientService.
+    function validClientAddress(address) {
+      return address is map
+        && address.keys().hasAll([
+          'zipCode', 'street', 'number', 'complement',
+          'neighborhood', 'city', 'state'
+        ])
+        && address.keys().hasOnly([
+          'zipCode', 'street', 'number', 'complement',
+          'neighborhood', 'city', 'state'
+        ])
+        && address.zipCode is string && address.zipCode.size() <= 9
+        && address.street is string && address.street.size() <= 200
+        && address.number is string && address.number.size() <= 30
+        && address.complement is string && address.complement.size() <= 150
+        && address.neighborhood is string && address.neighborhood.size() <= 120
+        && address.city is string && address.city.size() <= 120
+        && address.state is string && address.state.size() <= 2;
+    }
+
+    function validClient(data) {
+      return data.keys().hasAll([
+          'tenantId', 'type', 'name', 'document', 'email', 'phone',
+          'address', 'status', 'notes', 'createdBy', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'tenantId', 'type', 'name', 'document', 'email', 'phone',
+          'address', 'status', 'notes', 'createdBy', 'createdAt', 'updatedAt'
+        ])
+        && data.tenantId is string && data.tenantId.size() > 0
+        && data.type in ['individual', 'company']
+        && data.name is string
+        && data.name.size() > 0 && data.name.size() <= 150
+        && data.document is string
+        && (
+          data.document == ''
+          || (data.type == 'individual' && data.document.matches('^[0-9]{11}$'))
+          || (data.type == 'company' && data.document.matches('^[0-9A-Z]{12}[0-9]{2}$'))
+        )
+        && data.email is string && data.email.size() <= 254
+        && data.phone is string && data.phone.size() <= 30
+        && validClientAddress(data.address)
+        && data.status in ['active', 'inactive']
+        && data.notes is string && data.notes.size() <= 3000
+        && data.createdBy is string
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    match /clients/{clientId} {
+      allow get, list: if canProjectAction(resource.data.tenantId, 'view');
+
+      allow create: if validClient(request.resource.data)
+        && canProjectAction(request.resource.data.tenantId, 'create')
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.status == 'active'
+        && request.resource.data.createdAt <= request.time
+        && request.resource.data.createdAt >= request.time - duration.value(5, 'm')
+        && request.resource.data.updatedAt == request.resource.data.createdAt;
+
+      allow update: if canProjectAction(resource.data.tenantId, 'update')
+        && validClient(request.resource.data)
+        && request.resource.data.tenantId == resource.data.tenantId
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt >= resource.data.updatedAt
+        && request.resource.data.updatedAt <= request.time;
+
+      allow delete: if canProjectAction(resource.data.tenantId, 'delete');
     }
 
     match /{document=**} {

@@ -1,123 +1,66 @@
 
-<div class="dashboard">
+<section class="dashboard-page">
 
-  <div class="page-heading">
-
+  <header class="dashboard-header">
     <div>
       <h1>Dashboard</h1>
-      <p>Visão geral da sua organização.</p>
+      <p>
+        Acompanhe os indicadores e o desempenho
+        da sua organização.
+      </p>
     </div>
 
-    <div class="date-label">
-      <i class="pi pi-calendar"></i>
-      Visão geral
+    <button
+      type="button"
+      class="refresh-button"
+      (click)="loadDashboardProjects()"
+      [disabled]="projectsLoading()"
+    >
+      <i class="pi pi-refresh"></i>
+      Atualizar
+    </button>
+  </header>
+
+  @if (!canViewProjects()) {
+
+    <div class="dashboard-message">
+      <i class="pi pi-lock"></i>
+
+      <p>
+        Você não possui permissão para visualizar
+        os indicadores de projetos.
+      </p>
     </div>
 
-  </div>
+  } @else if (projectsLoading()) {
 
-  <div class="row g-3 mb-4">
+    <div class="dashboard-message">
+      <i class="pi pi-spin pi-spinner"></i>
 
-    @for (item of indicators; track item.title) {
-
-      <div class="col-12 col-sm-6 col-xl-3">
-
-        <div class="indicator-card">
-
-          <div class="indicator-top">
-
-            <span>{{ item.title }}</span>
-
-            <div class="indicator-icon">
-              <i class="pi" [class]="item.icon"></i>
-            </div>
-
-          </div>
-
-          <div class="indicator-value">
-            {{ item.value }}
-          </div>
-
-          <div class="indicator-variation">
-            <span>{{ item.variation }}</span>
-            <small>em relação ao mês anterior</small>
-          </div>
-
-        </div>
-
-      </div>
-
-    }
-
-  </div>
-
-  <div class="row g-3">
-
-    <div class="col-12 col-xl-8">
-
-      <div class="content-card">
-
-        <div class="card-heading">
-          <div>
-            <h3>Desempenho empresarial</h3>
-            <p>Indicadores gerais da organização</p>
-          </div>
-        </div>
-
-        <div class="chart-placeholder">
-
-          <i class="pi pi-chart-bar"></i>
-
-          <strong>Gráficos serão implementados</strong>
-
-          <span>
-            Integração com Chart.js na próxima etapa.
-          </span>
-
-        </div>
-
-      </div>
-
+      <p>Carregando indicadores de projetos...</p>
     </div>
 
-    <div class="col-12 col-xl-4">
+  } @else if (projectsError()) {
 
-      <div class="content-card">
+    <div class="dashboard-message error">
+      <i class="pi pi-exclamation-triangle"></i>
 
-        <div class="card-heading">
-          <div>
-            <h3>Atividades recentes</h3>
-            <p>Últimas movimentações</p>
-          </div>
-        </div>
+      <p>{{ projectsError() }}</p>
 
-        <div class="activity-list">
-
-          @for (activity of activities; track activity.title) {
-
-            <div class="activity-item">
-
-              <div class="activity-dot"></div>
-
-              <div class="activity-info">
-
-                <strong>{{ activity.title }}</strong>
-
-                <span>{{ activity.description }}</span>
-
-                <small>{{ activity.time }}</small>
-
-              </div>
-
-            </div>
-
-          }
-
-        </div>
-
-      </div>
-
+      <button
+        type="button"
+        (click)="loadDashboardProjects()"
+      >
+        Tentar novamente
+      </button>
     </div>
 
-  </div>
+  } @else {
 
-</div>
+    <app-project-dashboard
+      [projects]="dashboardProjects()"
+    ></app-project-dashboard>
+
+  }
+
+</section>

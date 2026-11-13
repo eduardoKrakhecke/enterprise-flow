@@ -1,0 +1,401 @@
+
+<section class="clients-page">
+
+  <header class="page-header">
+    <div>
+      <h1>Clientes</h1>
+      <p>Gerencie os clientes da sua organização.</p>
+    </div>
+
+    @if (canCreate()) {
+      <button class="primary-button" (click)="openCreateForm()">
+        <i class="pi pi-plus"></i>
+        Novo cliente
+      </button>
+    }
+  </header>
+
+  @if (errorMessage()) {
+    <div class="message error" role="alert">
+      {{ errorMessage() }}
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="message success" role="status">
+      {{ successMessage() }}
+    </div>
+  }
+
+  @if (!canView()) {
+    <div class="empty-state">
+      Você não possui permissão para visualizar clientes.
+    </div>
+  } @else {
+
+    <div class="stats-grid">
+      <article class="stat-card">
+        <span>Total de clientes</span>
+        <strong>{{ totalClients() }}</strong>
+      </article>
+
+      <article class="stat-card">
+        <span>Ativos</span>
+        <strong>{{ activeClients() }}</strong>
+      </article>
+
+      <article class="stat-card">
+        <span>Inativos</span>
+        <strong>{{ inactiveClients() }}</strong>
+      </article>
+    </div>
+
+    @if (showForm()) {
+      <section class="form-panel">
+
+        <div class="panel-heading">
+          <h2>
+            {{ editingClientId() ? 'Editar cliente' : 'Novo cliente' }}
+          </h2>
+
+          <button
+            type="button"
+            class="icon-button"
+            aria-label="Fechar formulário"
+            (click)="closeForm()"
+          >
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+
+        <form [formGroup]="clientForm" (ngSubmit)="saveClient()">
+
+          <div class="form-grid">
+
+            <div class="form-field">
+              <label for="clientType">Tipo de cliente</label>
+              <select id="clientType" formControlName="type">
+                <option value="company">Pessoa jurídica</option>
+                <option value="individual">Pessoa física</option>
+              </select>
+            </div>
+
+            <div class="form-field">
+              <label for="clientName">Nome / Razão social *</label>
+              <input
+                id="clientName"
+                type="text"
+                formControlName="name"
+                placeholder="Nome do cliente"
+              />
+            </div>
+
+            <div class="form-field">
+              <label for="clientDocument">
+                {{ clientForm.controls.type.value === 'individual'
+                ? 'CPF'
+                : 'CNPJ' }}
+              </label>
+
+              <input
+                id="clientDocument"
+                type="text"
+                formControlName="document"
+                (input)="formatDocument()"
+              />
+
+              @if (
+                clientForm.controls.document.hasError('invalidDocument')
+                && clientForm.controls.document.touched
+                ) {
+                <small class="field-error">
+                  Documento inválido.
+                </small>
+              }
+            </div>
+
+            <div class="form-field">
+              <label for="clientEmail">E-mail</label>
+              <input
+                id="clientEmail"
+                type="email"
+                formControlName="email"
+              />
+            </div>
+
+            <div class="form-field">
+              <label for="clientPhone">Telefone</label>
+              <input
+                id="clientPhone"
+                type="tel"
+                formControlName="phone"
+                (input)="formatPhone()"
+              />
+            </div>
+
+            @if (editingClientId()) {
+              <div class="form-field">
+                <label for="clientStatus">Status</label>
+                <select id="clientStatus" formControlName="status">
+                  <option value="active">Ativo</option>
+                  <option value="inactive">Inativo</option>
+                </select>
+              </div>
+            }
+
+            <div class="section-title full-width">
+              <h3>Endereço</h3>
+            </div>
+
+            <div class="form-field">
+              <label for="zipCode">CEP</label>
+
+              <div class="cep-field">
+                <input
+                  id="zipCode"
+                  formControlName="zipCode"
+                  (input)="formatCep()"
+                  (blur)="searchCep()"
+                  maxlength="9"
+                  placeholder="00000-000"
+                />
+
+                <button
+                  type="button"
+                  class="secondary-button"
+                  (click)="searchCep()"
+                  [disabled]="searchingCep()"
+                >
+                  {{ searchingCep() ? 'Buscando...' : 'Buscar' }}
+                </button>
+              </div>
+
+              @if (cepError()) {
+                <small class="field-error">
+                  {{ cepError() }}
+                </small>
+              }
+            </div>
+
+            <div class="form-field">
+              <label for="street">Logradouro</label>
+              <input id="street" formControlName="street" />
+            </div>
+
+            <div class="form-field">
+              <label for="number">Número</label>
+              <input id="number" formControlName="number" />
+            </div>
+
+            <div class="form-field">
+              <label for="complement">Complemento</label>
+              <input id="complement" formControlName="complement" />
+            </div>
+
+            <div class="form-field">
+              <label for="neighborhood">Bairro</label>
+              <input id="neighborhood" formControlName="neighborhood" />
+            </div>
+
+            <div class="form-field">
+              <label for="city">Cidade</label>
+              <input id="city" formControlName="city" />
+            </div>
+
+            <div class="form-field">
+              <label for="state">Estado</label>
+              <input id="state" formControlName="state" maxlength="2" />
+            </div>
+
+            <div class="form-field full-width">
+              <label for="notes">Observações</label>
+              <textarea
+                id="notes"
+                rows="3"
+                formControlName="notes"
+              ></textarea>
+            </div>
+
+          </div>
+
+          <div class="form-actions">
+            <button
+              type="button"
+              class="secondary-button"
+              (click)="closeForm()"
+              [disabled]="saving()"
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="submit"
+              class="primary-button"
+              [disabled]="saving()"
+            >
+              {{ saving() ? 'Salvando...' : 'Salvar cliente' }}
+            </button>
+          </div>
+
+        </form>
+      </section>
+    }
+
+    <section class="clients-panel">
+
+      <div class="panel-heading">
+        <h2>Clientes cadastrados</h2>
+      </div>
+
+      <div class="filters">
+        <input
+          type="search"
+          placeholder="Buscar nome, CPF/CNPJ ou e-mail"
+          [value]="searchTerm()"
+          (input)="searchTerm.set($any($event.target).value)"
+        />
+
+        <select
+          aria-label="Filtrar por tipo"
+          [value]="typeFilter()"
+          (change)="typeFilter.set($any($event.target).value)"
+        >
+          <option value="all">Todos os tipos</option>
+          <option value="company">Pessoa jurídica</option>
+          <option value="individual">Pessoa física</option>
+        </select>
+
+        <select
+          aria-label="Filtrar por status"
+          [value]="statusFilter()"
+          (change)="statusFilter.set($any($event.target).value)"
+        >
+          <option value="all">Todos os status</option>
+          <option value="active">Ativos</option>
+          <option value="inactive">Inativos</option>
+        </select>
+      </div>
+
+      @if (loading()) {
+        <div class="empty-state">
+          Carregando clientes...
+        </div>
+      } @else if (filteredClients().length === 0) {
+        <div class="empty-state">
+          Nenhum cliente encontrado.
+        </div>
+      } @else {
+        <div class="table-container">
+          <table>
+            <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Tipo</th>
+              <th>Documento</th>
+              <th>Contato</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+            </thead>
+
+            <tbody>
+              @for (client of filteredClients(); track client.id) {
+                <tr>
+                  <td>
+                    <strong>{{ client.name }}</strong>
+                  </td>
+
+                  <td>{{ typeLabel(client.type) }}</td>
+
+                  <td>{{ client.document || '—' }}</td>
+
+                  <td>
+                    <div class="contact-cell">
+                      <span>{{ client.email || '—' }}</span>
+                      <small>{{ client.phone }}</small>
+                    </div>
+                  </td>
+
+                  <td>
+                    <span
+                      class="status-badge"
+                      [class.active]="client.status === 'active'"
+                      [class.inactive]="client.status === 'inactive'"
+                    >
+                      {{
+                        client.status === 'active'
+                          ? 'Ativo'
+                          : 'Inativo'
+                      }}
+                    </span>
+                  </td>
+
+                  <td>
+                    <div class="table-actions">
+                      @if (canUpdate()) {
+                        <button
+                          type="button"
+                          class="icon-button"
+                          title="Editar"
+                          (click)="openEditForm(client)"
+                        >
+                          <i class="pi pi-pencil"></i>
+                        </button>
+                      }
+
+                      @if (canDelete()) {
+                        <button
+                          type="button"
+                          class="icon-button danger"
+                          title="Excluir"
+                          (click)="requestDelete(client)"
+                        >
+                          <i class="pi pi-trash"></i>
+                        </button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+
+    @if (deletingClientId()) {
+      <div class="modal-backdrop">
+        <div
+          class="confirm-dialog"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="delete-client-title"
+        >
+          <h2 id="delete-client-title">Excluir cliente?</h2>
+          <p>Esta ação não poderá ser desfeita.</p>
+
+          <div class="form-actions">
+            <button
+              type="button"
+              class="secondary-button"
+              (click)="cancelDelete()"
+              [disabled]="saving()"
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="button"
+              class="danger-button"
+              (click)="confirmDelete()"
+              [disabled]="saving()"
+            >
+              Excluir
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  }
+
+</section>
