@@ -577,7 +577,8 @@ match /invitations/{invitationId} {
         && data.keys().hasOnly([
           'tenantId', 'projectId', 'title', 'description',
           'assignedTo', 'status', 'priority', 'dueDate',
-          'completedAt', 'createdBy', 'createdAt', 'updatedAt'
+          'completedAt', 'createdBy', 'createdAt', 'updatedAt',
+          'updatedBy', 'lastActivityId'
         ])
         && data.tenantId is string
         && data.projectId is string
@@ -605,6 +606,14 @@ match /invitations/{invitationId} {
           || data.completedAt is timestamp
         )
         && data.createdBy is string
+        && (
+          !data.keys().hasAny(['updatedBy'])
+          || data.updatedBy is string
+        )
+        && (
+          !data.keys().hasAny(['lastActivityId'])
+          || data.lastActivityId is string
+        )
         && data.createdAt is timestamp
         && data.updatedAt is timestamp;
     }
@@ -618,89 +627,121 @@ match /invitations/{invitationId} {
       ).data.tenantId == data.tenantId;
     }
 
+    function activityPath(activityId) {
+      return /databases/$(database)/documents/taskActivities/$(activityId);
+    }
+
+    function taskPath(taskId) {
+      return /databases/$(database)/documents/tasks/$(taskId);
+    }
+
+    // O evento de auditoria precisa estar no mesmo batch da atualização.
+    function validTaskAudit(taskId) {
+      let activityId = request.resource.data.get('lastActivityId', '');
+      let activity = getAfter(activityPath(activityId)).data;
+      let changed = request.resource.data.status != resource.data.status;
+      return activityId is string
+        && activityId.size() > 0
+        && activityId != resource.data.get('lastActivityId', '')
+        && existsAfter(activityPath(activityId))
+        && activity.tenantId == resource.data.tenantId
+        && activity.taskId == taskId
+        && activity.projectId == resource.data.projectId
+        && activity.userId == request.auth.uid
+        && activity.createdAt == request.resource.data.updatedAt
+        && activity.type == (changed ? 'status_changed' : 'updated')
+        && activity.previousStatus == (changed ? resource.data.status : null)
+        && activity.newStatus == (changed ? request.resource.data.status : null);
+    }
+
     match /tasks/{taskId} {
-
-      allow read: if canProjectAction(
-        resource.data.tenantId, 'view'
-      );
-
+      allow read: if canProjectAction(resource.data.tenantId, 'view');
       allow create: if validTask(request.resource.data)
-        && canProjectAction(
-          request.resource.data.tenantId, 'create'
-        )
+        && canProjectAction(request.resource.data.tenantId, 'create')
         && validTaskProject(request.resource.data)
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.status == 'pending'
         && request.resource.data.completedAt == null
-        && request.resource.data.createdAt <= request.time
-        && request.resource.data.createdAt
-          >= request.time - duration.value(5, 'm')
-        && request.resource.data.updatedAt
-          == request.resource.data.createdAt;
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && !request.resource.data.keys().hasAny(['updatedBy', 'lastActivityId']);
 
-      allow update: if canProjectAction(
-          resource.data.tenantId, 'update'
-        )
+      allow update: if canProjectAction(resource.data.tenantId, 'update')
         && validTask(request.resource.data)
         && request.resource.data.tenantId == resource.data.tenantId
         && request.resource.data.projectId == resource.data.projectId
         && request.resource.data.createdBy == resource.data.createdBy
         && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.updatedAt == request.time
         && request.resource.data.updatedAt >= resource.data.updatedAt
-        && request.resource.data.updatedAt <= request.time
-        && validTaskProject(request.resource.data);
+        && (request.resource.data.status == 'completed'
+          ? request.resource.data.completedAt is timestamp
+          : request.resource.data.completedAt == null)
+        && validTaskProject(request.resource.data)
+        && validTaskAudit(taskId);
 
-      allow delete: if canProjectAction(
-        resource.data.tenantId, 'delete'
-      );
+      allow delete: if canProjectAction(resource.data.tenantId, 'delete');
+    }
+
+    function validActivityFields(data) {
+      return data.keys().hasAll([
+          'tenantId', 'taskId', 'projectId', 'type', 'userId',
+          'message', 'previousStatus', 'newStatus', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'tenantId', 'taskId', 'projectId', 'type', 'userId',
+          'message', 'previousStatus', 'newStatus', 'createdAt'
+        ])
+        && data.tenantId is string
+        && data.taskId is string
+        && data.projectId is string
+        && data.userId == request.auth.uid
+        && data.message is string
+        && data.message.size() > 0
+        && data.message.size() <= 2000
+        && data.createdAt is timestamp
+        && data.createdAt == request.time;
+    }
+
+    function validComment(data) {
+      return data.type == 'comment'
+        && data.previousStatus == null
+        && data.newStatus == null
+        && canProjectAction(data.tenantId, 'create')
+        && exists(taskPath(data.taskId))
+        && get(taskPath(data.taskId)).data.tenantId == data.tenantId
+        && get(taskPath(data.taskId)).data.projectId == data.projectId;
+    }
+
+    function validAuditActivity(activityId, data) {
+      let before = get(taskPath(data.taskId)).data;
+      let after = getAfter(taskPath(data.taskId)).data;
+      let changed = before.status != after.status;
+      return data.type in ['updated', 'status_changed']
+        && canProjectAction(data.tenantId, 'update')
+        && exists(taskPath(data.taskId))
+        && after.tenantId == data.tenantId
+        && before.tenantId == data.tenantId
+        && before.projectId == data.projectId
+        && after.projectId == data.projectId
+        && after.lastActivityId == activityId
+        && after.updatedBy == request.auth.uid
+        && after.updatedAt == data.createdAt
+        && after.updatedAt != before.updatedAt
+        && data.type == (changed ? 'status_changed' : 'updated')
+        && data.previousStatus == (changed ? before.status : null)
+        && data.newStatus == (changed ? after.status : null);
     }
 
     match /taskActivities/{activityId} {
-
-      allow read: if isAuthenticated()
-        && canProjectAction(resource.data.tenantId, 'view');
-
+      allow read: if canProjectAction(resource.data.tenantId, 'view');
       allow create: if isAuthenticated()
-        && request.resource.data.keys().hasAll([
-          'tenantId', 'taskId', 'projectId', 'type',
-          'userId', 'message', 'previousStatus',
-          'newStatus', 'createdAt'
-        ])
-        && request.resource.data.keys().hasOnly([
-          'tenantId', 'taskId', 'projectId', 'type',
-          'userId', 'message', 'previousStatus',
-          'newStatus', 'createdAt'
-        ])
-        && request.resource.data.tenantId is string
-        && request.resource.data.taskId is string
-        && request.resource.data.projectId is string
-        && request.resource.data.type == 'comment'
-        && request.resource.data.userId == request.auth.uid
-        && request.resource.data.message is string
-        && request.resource.data.message.size() > 0
-        && request.resource.data.message.size() <= 2000
-        && request.resource.data.previousStatus == null
-        && request.resource.data.newStatus == null
-        && request.resource.data.createdAt is timestamp
-        && request.resource.data.createdAt <= request.time
-        && request.resource.data.createdAt
-          >= request.time - duration.value(5, 'm')
-        && canProjectAction(
-          request.resource.data.tenantId, 'create'
-        )
-        && exists(
-          /databases/$(database)/documents/tasks/$(request.resource.data.taskId)
-        )
-        && get(
-          /databases/$(database)/documents/tasks/$(request.resource.data.taskId)
-        ).data.tenantId == request.resource.data.tenantId
-        && get(
-          /databases/$(database)/documents/tasks/$(request.resource.data.taskId)
-        ).data.projectId == request.resource.data.projectId;
-
+        && validActivityFields(request.resource.data)
+        && (validComment(request.resource.data)
+          || validAuditActivity(activityId, request.resource.data));
       allow update, delete: if false;
     }
-
 
     // Bloqueio padrão.
     match /projects/{projectId} {
@@ -827,3 +868,4 @@ match /invitations/{invitationId} {
     }
   }
 }
+

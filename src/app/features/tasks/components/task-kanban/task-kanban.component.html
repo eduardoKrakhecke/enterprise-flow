@@ -26,6 +26,16 @@
               </small>
             }
             @if (canUpdate()) {
+              <button
+                type="button"
+                class="edit-task-button"
+                title="Editar tarefa"
+                aria-label="Editar tarefa"
+                [disabled]="!!busyTaskId()"
+                (click)="openEdit(task)"
+              >
+                <i class="pi pi-pencil"></i>
+              </button>
               <label class="status-control">
                 <span>Mover para</span>
                 <select [value]="task.status" [disabled]="!!busyTaskId()"

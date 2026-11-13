@@ -109,9 +109,10 @@ export class TasksPage implements OnInit {
     this.successMessage.set('');
 
     try {
-      await this.taskService.updateTask(event.task.id, {
-        status: event.status
-      });
+      await this.taskService.updateTaskStatusWithHistory(
+        event.task.id,
+        event.status
+      );
 
       await this.loadTasks();
       this.successMessage.set('Status atualizado com sucesso.');
@@ -142,6 +143,23 @@ export class TasksPage implements OnInit {
     }
   }
 
+  private async loadTaskActivities(task: Task): Promise<void> {
+    this.activities.set([]);
+    this.activityError.set('');
+    this.loadingActivities.set(true);
+
+    try {
+      this.activities.set(
+        await this.taskActivityService.getActivities(task.id)
+      );
+    } catch (error) {
+      console.error('Erro ao carregar atividades:', error);
+      this.activityError.set('Não foi possível carregar as atividades.');
+    } finally {
+      this.loadingActivities.set(false);
+    }
+  }
+
   closeTaskActivities(): void {
     this.selectedActivityTask.set(null);
     this.activities.set([]);
@@ -150,7 +168,9 @@ export class TasksPage implements OnInit {
   }
 
   async submitComment(): Promise<void> {
-    const task = this.selectedActivityTask();
+    const task = this.selectedActivityTask() ?? this.tasks().find(
+      item => item.id === this.editingTaskId()
+    ) ?? null;
     const message = this.commentText().trim();
 
     if (!task || !message || this.savingComment() || !this.canCreate()) {
@@ -168,9 +188,7 @@ export class TasksPage implements OnInit {
       );
 
       this.commentText.set('');
-      this.activities.set(
-        await this.taskActivityService.getActivities(task.id)
-      );
+      await this.loadTaskActivities(task);
     } catch (error) {
       console.error('Erro ao enviar comentário:', error);
       this.activityError.set('Não foi possível enviar o comentário.');
@@ -228,6 +246,9 @@ export class TasksPage implements OnInit {
       priority: 'medium', dueDate: ''
     });
     this.taskForm.controls.projectId.enable({ emitEvent: false });
+    this.activities.set([]);
+    this.commentText.set('');
+    this.activityError.set('');
     this.showForm.set(true);
   }
 
@@ -246,12 +267,16 @@ export class TasksPage implements OnInit {
     });
     this.taskForm.controls.projectId.disable({ emitEvent: false });
     this.showForm.set(true);
+    void this.loadTaskActivities(task);
   }
 
   closeForm(): void {
     if (this.saving()) return;
     this.showForm.set(false);
     this.editingTaskId.set(null);
+    this.activities.set([]);
+    this.commentText.set('');
+    this.activityError.set('');
   }
 
   async saveTask(): Promise<void> {

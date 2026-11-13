@@ -20,6 +20,15 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .secondary-button { background: #374151; color: #f9fafb; }
 .danger-button { background: #991b1b; color: white; }
 .form-actions { justify-content: flex-end; margin-top: 18px; }
+.edit-activity-panel {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--app-border, #e2e8f0);
+
+  h3 { margin: 0 0 4px; font-size: 16px; }
+  .panel-header { margin-bottom: 14px; }
+  .panel-header p { margin: 0; color: var(--app-muted, #64748b); }
+}
 .filters { display: grid; grid-template-columns: minmax(220px, 2fr) repeat(2,minmax(150px,1fr)); gap: 12px; margin: 16px 0; }
 .view-switch {
   display: inline-flex;

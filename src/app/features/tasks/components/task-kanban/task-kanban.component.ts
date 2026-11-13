@@ -14,6 +14,7 @@ export class TaskKanban {
   readonly tasks = input.required<Task[]>();
   readonly members = input<TenantMember[]>([]);
   readonly canUpdate = input(false);
+  readonly editTask = output<Task>();
   readonly statusChange = output<{ task: Task; status: TaskStatus }>();
   readonly busyTaskId = input<string | null>(null);
   readonly draggedTaskId = signal<string | null>(null);
@@ -37,6 +38,11 @@ export class TaskKanban {
   move(task: Task, status: TaskStatus): void {
     if (!this.canUpdate() || this.busyTaskId() || task.status === status) return;
     this.statusChange.emit({ task, status });
+  }
+
+  openEdit(task: Task): void {
+    if (!this.canUpdate() || this.busyTaskId()) return;
+    this.editTask.emit(task);
   }
 
   onDragStart(event: DragEvent, task: Task): void {

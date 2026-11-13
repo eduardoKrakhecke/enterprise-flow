@@ -47,6 +47,59 @@
           </div>
           <div class="form-actions"><button type="button" class="secondary-button" (click)="closeForm()" [disabled]="saving()">Cancelar</button><button type="submit" class="primary-button" [disabled]="saving() || loadingOptions()">{{ saving() ? 'Salvando...' : 'Salvar tarefa' }}</button></div>
         </form>
+
+        @if (editingTaskId()) {
+          <section class="edit-activity-panel" aria-labelledby="edit-task-activities-title">
+            <div class="panel-header">
+              <div>
+                <h3 id="edit-task-activities-title">Comentários da tarefa</h3>
+                <p>Histórico de atividades e comentários.</p>
+              </div>
+            </div>
+
+            <div class="activity-composer">
+              <label for="editTaskComment">Novo comentário</label>
+              <textarea
+                id="editTaskComment"
+                rows="3"
+                maxlength="2000"
+                placeholder="Escreva um comentário sobre esta tarefa..."
+                [value]="commentText()"
+                (input)="commentText.set($any($event.target).value)"
+                [disabled]="savingComment() || !canCreate()"
+              ></textarea>
+              <div class="activity-actions">
+                <button
+                  type="button"
+                  class="primary-button"
+                  (click)="submitComment()"
+                  [disabled]="savingComment() || !commentText().trim() || !canCreate()"
+                >
+                  <i class="pi pi-send"></i>
+                  {{ savingComment() ? 'Enviando...' : 'Enviar comentário' }}
+                </button>
+              </div>
+            </div>
+
+            @if (loadingActivities()) {
+              <div class="empty-state">Carregando comentários...</div>
+            } @else if (activityError()) {
+              <div class="message error-message">{{ activityError() }}</div>
+            } @else if (activities().length === 0) {
+              <div class="empty-state">Nenhum comentário registrado.</div>
+            } @else {
+              <div class="activity-list">
+                @for (activity of activities(); track activity.id) {
+                  <article class="activity-item">
+                    <strong>{{ activityUserName(activity.userId) }}</strong>
+                    <p>{{ activity.message }}</p>
+                    <small>{{ activity.createdAt.toDate() | date:'dd/MM/yyyy HH:mm' }}</small>
+                  </article>
+                }
+              </div>
+            }
+          </section>
+        }
       </section>
     }
 
@@ -86,6 +139,7 @@
             [members]="members()"
             [canUpdate]="canUpdate()"
             [busyTaskId]="movingTaskId()"
+            (editTask)="openEditForm($event)"
             (statusChange)="changeTaskStatus($event)"
           />
         } @else {

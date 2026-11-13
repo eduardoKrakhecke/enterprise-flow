@@ -2,6 +2,7 @@ import { Timestamp } from '@angular/fire/firestore';
 
 export type TaskActivityType =
   | 'created'
+  | 'updated'
   | 'status_changed'
   | 'comment';
 

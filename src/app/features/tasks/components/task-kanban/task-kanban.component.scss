@@ -4,10 +4,10 @@
 .column-header h3 { margin: 0; font-size: 14px; color: #e2e8f0; }
 .column-header span { color: #cbd5e1; background: #334155; padding: 3px 9px; border-radius: 999px; font-size: 12px; }
 .column-tasks { display: flex; flex-direction: column; gap: 10px; }
-.task-card { background: #0f172a; color: #e2e8f0; border: 1px solid #334155; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.task-card { position: relative; background: #0f172a; color: #e2e8f0; border: 1px solid #334155; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
 .task-card[draggable='true'] { cursor: grab; }
 .task-card.busy { opacity: .55; }
-.task-card strong { font-size: 14px; overflow-wrap: anywhere; }
+.task-card strong { padding-right: 30px; font-size: 14px; overflow-wrap: anywhere; }
 .task-card p { margin: 0; color: #94a3b8; font-size: 12px; line-height: 1.4; overflow-wrap: anywhere; }
 .task-meta { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 11px; color: #cbd5e1; }
 .priority { padding: 3px 7px; border-radius: 6px; background: #334155; }
@@ -16,6 +16,24 @@
 .assignee { font-size: 11px; color: #94a3b8; overflow-wrap: anywhere; }
 .status-control { display: flex; flex-direction: column; gap: 5px; font-size: 11px; color: #94a3b8; }
 .status-control select { width: 100%; background: #1e293b; color: #e2e8f0; border: 1px solid #475569; border-radius: 7px; padding: 7px; }
+.edit-task-button {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid #475569;
+  border-radius: 7px;
+  background: transparent;
+  color: #cbd5e1;
+  font-size: 12px;
+  cursor: pointer;
+}
+.edit-task-button:hover:not(:disabled) { background: #1e293b; color: #ffffff; }
+.edit-task-button:disabled { opacity: .55; cursor: not-allowed; }
 .empty-column { color: #94a3b8; text-align: center; font-size: 12px; margin: 24px 0; }
 @media(max-width: 1000px) { .kanban-board { grid-template-columns: repeat(4, 250px); } }
 
